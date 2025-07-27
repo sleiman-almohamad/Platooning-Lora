@@ -1,0 +1,25 @@
+[project]
+name = "platooning-lora"
+version = "0.1.0"
+description = "LoRA fine-tuning project for platooning"
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "diffusers>=0.21.0",
+    "transformers>=4.25.0",
+    "peft>=0.6.0",
+    "accelerate>=0.24.0",
+    "safetensors>=0.4.0",
+    "Pillow>=9.0.0",
+    "numpy>=1.21.0",
+    "tqdm>=4.64.0",
+    "wandb>=0.15.0",
+    "bitsandbytes>=0.41.0",
+    "xformers>=0.0.20",
+    "scipy>=1.9.0",
+]
+
+[tool.setuptools]
+packages = []
+py-modules = []
