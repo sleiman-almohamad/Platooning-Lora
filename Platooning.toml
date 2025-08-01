@@ -1,7 +1,7 @@
 [[subsets]]
 caption_extension = ".txt"
 flip_aug = true
-image_dir = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Platooning _images-resized"
+image_dir = "/home/slimanutd/sleiman/projects/masterproject/'Old'Platooning-Lora/Platooning_images-resized"
 name = "subset 1"
 num_repeats = 10
 shuffle_caption = true

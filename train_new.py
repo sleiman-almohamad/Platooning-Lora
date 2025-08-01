@@ -4,6 +4,22 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+import importlib
+import math
+import random
+import time
+import sys
+from torch.types import Number
+# Remove problematic imports that aren't actually needed for this simplified version
+# from library.device_utils import init_ipex, clean_memory_on_device
+# from accelerate.utils import set_seed
+# from accelerate import Accelerator
+# import library.train_util as train_util
+# from library.train_util import DreamBoothDataset
+# import library.config_util as config_util
+# from library.huggingface_util import huggingface_util
+# from library.utils import setup_logging, add_logging_arguments
+# init_ipex()
 import os
 import glob
 import json
@@ -30,7 +46,7 @@ from accelerate import Accelerator
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class Config:
+class EnhancedConfig:
     def __init__(self, toml_path: str):
         config = toml.load(toml_path)
 
@@ -79,7 +95,7 @@ class Config:
         self.output_dir = saving_args['output_dir']
         self.save_every_n_epochs = saving_args['save_every_n_epochs']
         self.validation_prompts = [
-            "Two trucks platooning on highway",
+            "Two trucks in close formation with a leading lorry on a highway",
             "Autonomous vehicles in convoy formation",
             "Commercial trucks following in close formation",
             "Platooning vehicles maintaining safe distance"
@@ -98,7 +114,7 @@ class EnhancedPlatooningDataset(Dataset):
     Enhanced dataset with support for repeats to simulate larger epochs.
     """
 
-    def __init__(self, config: Config, split: str = "train"):
+    def __init__(self, config: EnhancedConfig, split: str = "train"):
         self.config = config
         self.split = split
 
@@ -159,10 +175,10 @@ class EnhancedPlatooningDataset(Dataset):
         return {"pixel_values": image_tensor, "input_ids": text, "image_path": image_path}
 
 
-class PlatooningLoRATrainer:
+class PlatooningTrainer:
     """Trainer adapted to match .toml configuration"""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: EnhancedConfig):
         self.config = config
         self.accelerator = Accelerator(
             gradient_accumulation_steps=config.gradient_accumulation_steps,
@@ -227,7 +243,7 @@ class PlatooningLoRATrainer:
             weight_dtype = torch.bfloat16
 
         # FIX: Move VAE to device but keep it in fp32 for stability
-        self.vae.to(self.accelerator.device)
+        self.vae.to(self.accelerator.device, dtype=torch.float32)
         self.text_encoder.to(self.accelerator.device, dtype=weight_dtype)
 
 
@@ -450,7 +466,7 @@ def main():
     parser.add_argument("--num_repeats", type=int, help="Number of times to repeat the dataset per epoch")
 
     args = parser.parse_args()
-    config = Config("Platooning.toml")
+    config = EnhancedConfig("Platooning.toml")
 
     if args.data_dir: config.data_dir = args.data_dir
     if args.output_dir: config.output_dir = args.output_dir
@@ -461,7 +477,7 @@ def main():
     if args.num_repeats: config.num_repeats = args.num_repeats
 
 
-    trainer = PlatooningLoRATrainer(config)
+    trainer = PlatooningTrainer(config)
     trainer.train()
 
 if __name__ == "__main__":
