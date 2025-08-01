@@ -1,0 +1,83 @@
+[[subsets]]
+caption_extension = ".txt"
+flip_aug = true
+image_dir = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Platooning _images-resized"
+name = "subset 1"
+num_repeats = 10
+shuffle_caption = true
+
+[train_mode]
+train_mode = "lora"
+
+[general_args.args]
+max_data_loader_n_workers = 1
+persistent_data_loader_workers = true
+no_half_vae = true
+full_bf16 = true
+mixed_precision = "bf16"
+gradient_checkpointing = true
+gradient_accumulation_steps = 1
+seed = 0
+max_token_length = 225
+prior_loss_weight = 1.0
+xformers = true
+max_train_epochs = 30
+cache_latents = true
+clip_skip = 2
+pretrained_model_name_or_path = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/v1-5-pruned.safetensors"
+
+[general_args.dataset_args]
+resolution = [ 512, 512,]
+batch_size = 1
+
+[network_args.args]
+network_dim = 32
+network_alpha = 16.0
+min_timestep = 0
+max_timestep = 1000
+
+[optimizer_args.args]
+optimizer_type = "AdaFactor"
+lr_scheduler = "constant"
+loss_type = "l2"
+learning_rate = 0.0001
+unet_lr = 5e-5
+text_encoder_lr = 0.0001
+max_grad_norm = 1.0
+min_snr_gamma = 5
+
+[saving_args.args]
+output_dir = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Output_Lora_training"
+output_name = "Lora_Platooning"
+save_precision = "bf16"
+save_model_as = "safetensors"
+tag_occurrence = true
+tag_file_location = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Output_Lora_training"
+save_every_n_epochs = 1
+save_toml = true
+save_toml_location = "/home/slimanutd/sleiman/projects/masterproject/LoRA_Easy_Training/Output_Lora_Platooning"
+save_state = true
+
+[noise_args.args]
+noise_offset = 0.1
+multires_noise_iterations = 6
+multires_noise_discount = 0.3
+
+[sample_args.args]
+sample_sampler = "ddim"
+sample_every_n_epochs = 1
+sample_prompts = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Output_Lora_training/sample_prompts.txt"
+
+[logging_args.args]
+log_tracker_name = "Platooning_LoRA_Run1"
+log_with = "tensorboard"
+logging_dir = "/home/slimanutd/sleiman/projects/masterproject/Platooning-Lora/Output_Lora_training/Logs"
+
+[bucket_args.dataset_args]
+enable_bucket = true
+bucket_no_upscale = true
+min_bucket_reso = 256
+max_bucket_reso = 2048
+bucket_reso_steps = 64
+
+[network_args.args.network_args]

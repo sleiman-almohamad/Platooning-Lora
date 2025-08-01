@@ -35,7 +35,7 @@ def check_requirements():
 
 def check_dataset():
     """Check if dataset is properly formatted"""
-    data_dir = Path("./Platooning images-resized")
+    data_dir = Path("./Platooning _images-resized")
     
     if not data_dir.exists():
         logger.error(f"Dataset directory not found: {data_dir}")
