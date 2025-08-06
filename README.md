@@ -25,7 +25,7 @@ Platooning refers to a group of vehicles (typically trucks) that travel together
 
 1. **Clone the repository:**
 ```bash
-git clone <repository-url>
+git clone https://github.com/sleiman-almohamad/Platooning-Lora
 cd Platooning-Lora
 ```
 
@@ -49,7 +49,7 @@ This will:
 
 1. **Clone the repository:**
 ```bash
-git clone <repository-url>
+git clone https://github.com/sleiman-almohamad/Platooning-Lora
 cd Platooning-Lora
 ```
 
