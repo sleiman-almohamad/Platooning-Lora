@@ -61,8 +61,7 @@ class SdxlTextEncodingStrategy(TextEncodingStrategy):
     def _pool_workaround(
         self, text_encoder: CLIPTextModelWithProjection, last_hidden_state: torch.Tensor, input_ids: torch.Tensor, eos_token_id: int
     ):
-        r"""
-        workaround for CLIP's pooling bug: it returns the hidden states for the max token id as the pooled output
+        r"""workaround for CLIP's pooling bug: it returns the hidden states for the max token id as the pooled output
         instead of the hidden states for the EOS token
         If we use Textual Inversion, we need to use the hidden states for the EOS token as the pooled output
 
@@ -74,8 +73,7 @@ class SdxlTextEncodingStrategy(TextEncodingStrategy):
         pooled_output = last_hidden_state[
             torch.arange(last_hidden_state.shape[0], device=last_hidden_state.device),
             input_ids.to(dtype=torch.int, device=last_hidden_state.device).argmax(dim=-1),
-        ]
-        """
+        ]"""
 
         # input_ids: b*n,77
         # find index for EOS token
@@ -142,28 +140,28 @@ class SdxlTextEncodingStrategy(TextEncodingStrategy):
 
         if max_token_length is not None:
             # bs*3, 77, 768 or 1024
-            # encoder1: <BOS>...<EOS> の三連を <BOS>...<EOS> へ戻す
+            # encoder1
             states_list = [hidden_states1[:, 0].unsqueeze(1)]  # <BOS>
             for i in range(1, max_token_length, tokenizer1.model_max_length):
-                states_list.append(hidden_states1[:, i : i + tokenizer1.model_max_length - 2])  # <BOS> の後から <EOS> の前まで
+                states_list.append(hidden_states1[:, i : i + tokenizer1.model_max_length - 2])  
             states_list.append(hidden_states1[:, -1].unsqueeze(1))  # <EOS>
             hidden_states1 = torch.cat(states_list, dim=1)
 
-            # v2: <BOS>...<EOS> <PAD> ... の三連を <BOS>...<EOS> <PAD> ... へ戻す　正直この実装でいいのかわからん
+            # v2
             states_list = [hidden_states2[:, 0].unsqueeze(1)]  # <BOS>
             for i in range(1, max_token_length, tokenizer2.model_max_length):
-                chunk = hidden_states2[:, i : i + tokenizer2.model_max_length - 2]  # <BOS> の後から 最後の前まで
+                chunk = hidden_states2[:, i : i + tokenizer2.model_max_length - 2]  
                 # this causes an error:
                 # RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation
                 # if i > 1:
                 #     for j in range(len(chunk)):  # batch_size
-                #         if input_ids2[n_index + j * n_size, 1] == tokenizer2.eos_token_id:  # 空、つまり <BOS> <EOS> <PAD> ...のパターン
-                #             chunk[j, 0] = chunk[j, 1]  # 次の <PAD> の値をコピーする
-                states_list.append(chunk)  # <BOS> の後から <EOS> の前まで
-            states_list.append(hidden_states2[:, -1].unsqueeze(1))  # <EOS> か <PAD> のどちらか
+                #         if input_ids2[n_index + j * n_size
+                #             chunk[j, 0] = chunk[j
+                states_list.append(chunk)  
+            states_list.append(hidden_states2[:, -1].unsqueeze(1))  
             hidden_states2 = torch.cat(states_list, dim=1)
 
-            # pool はnの最初のものを使う
+            
             pool2 = pool2[::n_size]
 
         return hidden_states1, hidden_states2, pool2
@@ -171,13 +169,11 @@ class SdxlTextEncodingStrategy(TextEncodingStrategy):
     def encode_tokens(
         self, tokenize_strategy: TokenizeStrategy, models: List[Any], tokens: List[torch.Tensor]
     ) -> List[torch.Tensor]:
-        """
-        Args:
+        """Args:
             tokenize_strategy: TokenizeStrategy
             models: List of models, [text_encoder1, text_encoder2, unwrapped text_encoder2 (optional)].
                 If text_encoder2 is wrapped by accelerate, unwrapped_text_encoder2 is required
-            tokens: List of tokens, for text_encoder1 and text_encoder2
-        """
+            tokens: List of tokens, for text_encoder1 and text_encoder2"""
         if len(models) == 2:
             text_encoder1, text_encoder2 = models
             unwrapped_text_encoder2 = None

@@ -73,8 +73,7 @@ re_attention = re.compile(
 
 
 def parse_prompt_attention(text):
-    """
-    Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
@@ -104,8 +103,7 @@ def parse_prompt_attention(text):
      ['hill', 0.55],
      [', sun, ', 1.1],
      ['sky', 1.4641000000000006],
-     ['.', 1.1]]
-    """
+     ['.', 1.1]]"""
 
     res = []
     round_brackets = []
@@ -159,11 +157,9 @@ def parse_prompt_attention(text):
 
 
 def get_prompts_with_weights(pipe: StableDiffusionPipeline, prompt: List[str], max_length: int):
-    r"""
-    Tokenize a list of prompts and return its tokens with weights of each token.
+    r"""Tokenize a list of prompts and return its tokens with weights of each token.
 
-    No padding, starting or ending token is included.
-    """
+    No padding, starting or ending token is included."""
     tokens = []
     weights = []
     truncated = False
@@ -264,9 +260,9 @@ def get_unweighted_text_embeddings(
                 text_input_chunk[:, -1] = text_input[0, -1]
             else:  # v2
                 for j in range(len(text_input_chunk)):
-                    if text_input_chunk[j, -1] != eos and text_input_chunk[j, -1] != pad:  # 最後に普通の文字がある
+                    if text_input_chunk[j, -1] != eos and text_input_chunk[j, -1] != pad:  
                         text_input_chunk[j, -1] = eos
-                    if text_input_chunk[j, 1] == pad:  # BOSだけであとはPAD
+                    if text_input_chunk[j, 1] == pad:  
                         text_input_chunk[j, 1] = eos
 
             text_embedding, current_text_pool = get_hidden_states(
@@ -304,8 +300,7 @@ def get_weighted_text_embeddings(
     clip_skip=None,
     is_sdxl_text_encoder2=False,
 ):
-    r"""
-    Prompts can be assigned with local weights using brackets. For example,
+    r"""Prompts can be assigned with local weights using brackets. For example,
     prompt 'A (very beautiful) masterpiece' highlights the words 'very beautiful',
     and the embedding tokens corresponding to the words get multiplied by a constant, 1.1.
 
@@ -327,8 +322,7 @@ def get_weighted_text_embeddings(
         skip_parsing (`bool`, *optional*, defaults to `False`):
             Skip the parsing of brackets.
         skip_weighting (`bool`, *optional*, defaults to `False`):
-            Skip the weighting. When the parsing is skipped, it is forced True.
-    """
+            Skip the weighting. When the parsing is skipped, it is forced True."""
     max_length = (pipe.tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
     if isinstance(prompt, str):
         prompt = [prompt]
@@ -510,8 +504,7 @@ def prepare_controlnet_image(
 
 
 class SdxlStableDiffusionLongPromptWeightingPipeline:
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
+    r"""Pipeline for text-to-image generation using Stable Diffusion without tokens length limit, and support parsing
     weighting in prompt.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
@@ -535,8 +528,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             Classification module that estimates whether generated images could be considered offensive or harmful.
             Please, refer to the [model card](https://huggingface.co/CompVis/stable-diffusion-v1-4) for details.
         feature_extractor ([`CLIPFeatureExtractor`]):
-            Model that extracts features from generated images to be used as inputs for the `safety_checker`.
-    """
+            Model that extracts features from generated images to be used as inputs for the `safety_checker`."""
 
     # if version.parse(version.parse(diffusers.__version__).base_version) >= version.parse("0.9.0"):
 
@@ -616,7 +608,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             callback_steps is not None and (not isinstance(callback_steps, int) or callback_steps <= 0)
         ):
             raise ValueError(
-                f"`callback_steps` has to be a positive integer but is {callback_steps} of type" f" {type(callback_steps)}."
+                f"`callback_steps` has to be a positive integer but is {callback_steps} of type"  f" {type(callback_steps)}."
             )
 
     def get_timesteps(self, num_inference_steps, strength, device, is_text2img):
@@ -659,8 +651,8 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
 
     def prepare_extra_step_kwargs(self, generator, eta):
         # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
-        # eta (η) is only used with the DDIMScheduler, it will be ignored for other schedulers.
-        # eta corresponds to η in DDIM paper: https://arxiv.org/abs/2010.02502
+        # it will be ignored for other schedulers.
+        # /arxiv.org/abs/2010.02502
         # and should be between [0, 1]
 
         accepts_eta = "eta" in set(inspect.signature(self.scheduler.step).parameters.keys())
@@ -738,8 +730,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
         callback_steps: int = 1,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
+        r"""Function invoked when calling the pipeline for generation.
 
         Args:
             prompt (`str` or `List[str]`):
@@ -765,19 +756,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            strength (`float`, *optional*, defaults to 0.8):
-                Conceptually, indicates how much to transform the reference `image`. Must be between 0 and 1.
-                `image` will be used as a starting point, adding more noise to it the larger the `strength`. The
-                number of denoising steps depends on the amount of noise initially added. When `strength` is 1, added
-                noise will be maximum and the denoising process will run for the full number of iterations specified in
-                `num_inference_steps`. A value of 1, therefore, essentially ignores `image`.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
+                Paper](https://arxiv.org/pdf//arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
             generator (`torch.Generator`, *optional*):
                 A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
@@ -815,8 +794,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
+            (nsfw) content, according to the `safety_checker`."""
         if controlnet is not None and controlnet_image is None:
             raise ValueError("controlnet_image must be provided if controlnet is not None.")
 
@@ -1000,8 +978,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
         callback_steps: int = 1,
     ):
-        r"""
-        Function for text-to-image generation.
+        r"""Function for text-to-image generation.
         Args:
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation.
@@ -1018,13 +995,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
+                Paper](https://arxiv.org/pdf//arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
             generator (`torch.Generator`, *optional*):
                 A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
@@ -1055,8 +1026,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
+            (nsfw) content, according to the `safety_checker`."""
         return self.__call__(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -1094,8 +1064,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
         callback_steps: int = 1,
     ):
-        r"""
-        Function for image-to-image generation.
+        r"""Function for image-to-image generation.
         Args:
             image (`torch.FloatTensor` or `PIL.Image.Image`):
                 `Image`, or tensor representing an image batch, that will be used as the starting point for the
@@ -1117,13 +1086,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
+                Paper](https://arxiv.org/pdf//arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
             generator (`torch.Generator`, *optional*):
                 A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
@@ -1150,8 +1113,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
+            (nsfw) content, according to the `safety_checker`."""
         return self.__call__(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -1189,8 +1151,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
         is_cancelled_callback: Optional[Callable[[], bool]] = None,
         callback_steps: int = 1,
     ):
-        r"""
-        Function for inpaint.
+        r"""Function for inpaint.
         Args:
             image (`torch.FloatTensor` or `PIL.Image.Image`):
                 `Image`, or tensor representing an image batch, that will be used as the starting point for the
@@ -1216,13 +1177,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
+                Paper](https://arxiv.org/pdf//arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
             generator (`torch.Generator`, *optional*):
                 A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
@@ -1249,8 +1204,7 @@ class SdxlStableDiffusionLongPromptWeightingPipeline:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
-            (nsfw) content, according to the `safety_checker`.
-        """
+            (nsfw) content, according to the `safety_checker`."""
         return self.__call__(
             prompt=prompt,
             negative_prompt=negative_prompt,

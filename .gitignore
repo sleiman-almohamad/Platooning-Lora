@@ -1,0 +1,7 @@
+v1-5-pruned.safetensors
+
+__pycache__/
+
+.venv
+
+dataset/

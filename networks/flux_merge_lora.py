@@ -144,7 +144,7 @@ def merge_to_flux_model(
                 else:
                     logger.warning(
                         f"no module found for LoRA weight: {key}. Skipping..."
-                        f"LoRAの重みに対応するモジュールが見つかりませんでした。スキップします。"
+                        f"LoRA"
                     )
                     continue
 
@@ -502,12 +502,12 @@ def merge_lora_models(models, ratios, merge_dtype, concat=False, shuffle=False):
             alpha = alphas[lora_module_name]
 
             scale = math.sqrt(alpha / base_alpha) * ratio
-            scale = abs(scale) if "lora_up" in key else scale  # マイナスの重みに対応する。
+            scale = abs(scale) if "lora_up" in key else scale  
 
             if key in merged_sd:
                 assert (
                     merged_sd[key].size() == lora_sd[key].size() or concat_dim is not None
-                ), "weights shape mismatch, different dims? / 重みのサイズが合いません。dimが異なる可能性があります。"
+                ), "weights shape mismatch, different dims?"
                 if concat_dim is not None:
                     merged_sd[key] = torch.cat([merged_sd[key], lora_sd[key] * scale], dim=concat_dim)
                 else:
@@ -560,7 +560,7 @@ def merge(args):
 
     assert len(args.models) == len(
         args.ratios
-    ), "number of models must be equal to number of ratios / モデルの数と重みの数は合わせてください"
+    ), "number of models must be equal to number of ratios"
 
     merge_dtype = str_to_dtype(args.precision)
     save_dtype = str_to_dtype(args.save_precision)
@@ -569,7 +569,7 @@ def merge(args):
 
     assert (
         args.save_to or args.clip_l_save_to or args.t5xxl_save_to
-    ), "save_to or clip_l_save_to or t5xxl_save_to must be specified / save_toまたはclip_l_save_toまたはt5xxl_save_toを指定してください"
+    ), "save_to or clip_l_save_to or t5xxl_save_to must be specified"
     dest_dir = os.path.dirname(args.save_to or args.clip_l_save_to or args.t5xxl_save_to)
     if not os.path.exists(dest_dir):
         logger.info(f"creating directory: {dest_dir}")
@@ -579,10 +579,10 @@ def merge(args):
         if not args.diffusers:
             assert (args.clip_l is None and args.clip_l_save_to is None) or (
                 args.clip_l is not None and args.clip_l_save_to is not None
-            ), "clip_l_save_to must be specified if clip_l is specified / clip_lが指定されている場合はclip_l_save_toも指定してください"
+            ), "clip_l_save_to must be specified if clip_l is specified"
             assert (args.t5xxl is None and args.t5xxl_save_to is None) or (
                 args.t5xxl is not None and args.t5xxl_save_to is not None
-            ), "t5xxl_save_to must be specified if t5xxl is specified / t5xxlが指定されている場合はt5xxl_save_toも指定してください"
+            ), "t5xxl_save_to must be specified if t5xxl is specified"
             flux_state_dict, clip_l_state_dict, t5xxl_state_dict = merge_to_flux_model(
                 args.loading_device,
                 args.working_device,
@@ -598,7 +598,7 @@ def merge(args):
         else:
             assert (
                 args.clip_l is None and args.t5xxl is None
-            ), "clip_l and t5xxl are not supported with --diffusers / clip_l、t5xxlはDiffusersではサポートされていません"
+            ), "clip_l and t5xxl are not supported with --diffusers"
             flux_state_dict = merge_to_flux_model_diffusers(
                 args.loading_device,
                 args.working_device,
@@ -660,99 +660,99 @@ def setup_parser() -> argparse.ArgumentParser:
         "--save_precision",
         type=str,
         default=None,
-        help="precision in saving, same to merging if omitted. supported types: "
+        help="precision in saving, same to merging if omitted. supported types:"
         "float32, fp16, bf16, fp8 (same as fp8_e4m3fn), fp8_e4m3fn, fp8_e4m3fnuz, fp8_e5m2, fp8_e5m2fnuz"
-        " / 保存時に精度を変更して保存する、省略時はマージ時の精度と同じ",
+        "",
     )
     parser.add_argument(
         "--precision",
         type=str,
         default="float",
-        help="precision in merging (float is recommended) / マージの計算時の精度（floatを推奨）",
+        help="precision in merging (float is recommended)",
     )
     parser.add_argument(
         "--flux_model",
         type=str,
         default=None,
-        help="FLUX.1 model to load, merge LoRA models if omitted / 読み込むモデル、指定しない場合はLoRAモデルをマージする",
+        help="FLUX.1 model to load, merge LoRA models if omitted",
     )
     parser.add_argument(
         "--clip_l",
         type=str,
         default=None,
-        help="path to clip_l (*.sft or *.safetensors), should be float16 / clip_lのパス（*.sftまたは*.safetensors）",
+        help="path to clip_l (*.sft or *.safetensors), should be float16",
     )
     parser.add_argument(
         "--t5xxl",
         type=str,
         default=None,
-        help="path to t5xxl (*.sft or *.safetensors), should be float16 / t5xxlのパス（*.sftまたは*.safetensors）",
+        help="path to t5xxl (*.sft or *.safetensors), should be float16",
     )
     parser.add_argument(
         "--mem_eff_load_save",
         action="store_true",
         help="use custom memory efficient load and save functions for FLUX.1 model"
-        " / カスタムのメモリ効率の良い読み込みと保存関数をFLUX.1モデルに使用する",
+        "",
     )
     parser.add_argument(
         "--loading_device",
         type=str,
         default="cpu",
-        help="device to load FLUX.1 model. LoRA models are loaded on CPU / FLUX.1モデルを読み込むデバイス。LoRAモデルはCPUで読み込まれます",
+        help="device to load FLUX.1 model. LoRA models are loaded on CPU",
     )
     parser.add_argument(
         "--working_device",
         type=str,
         default="cpu",
         help="device to work (merge). Merging LoRA models are done on CPU."
-        + " / 作業（マージ）するデバイス。LoRAモデルのマージはCPUで行われます。",
+        + "",
     )
     parser.add_argument(
         "--save_to",
         type=str,
         default=None,
-        help="destination file name: safetensors file / 保存先のファイル名、safetensorsファイル",
+        help="destination file name: safetensors file",
     )
     parser.add_argument(
         "--clip_l_save_to",
         type=str,
         default=None,
-        help="destination file name for clip_l: safetensors file / clip_lの保存先のファイル名、safetensorsファイル",
+        help="destination file name for clip_l: safetensors file",
     )
     parser.add_argument(
         "--t5xxl_save_to",
         type=str,
         default=None,
-        help="destination file name for t5xxl: safetensors file / t5xxlの保存先のファイル名、safetensorsファイル",
+        help="destination file name for t5xxl: safetensors file",
     )
     parser.add_argument(
         "--models",
         type=str,
         nargs="*",
-        help="LoRA models to merge: safetensors file / マージするLoRAモデル、safetensorsファイル",
+        help="LoRA models to merge: safetensors file",
     )
-    parser.add_argument("--ratios", type=float, nargs="*", help="ratios for each model / それぞれのLoRAモデルの比率")
+    parser.add_argument("--ratios", type=float, nargs="*", help="ratios for each model")
     parser.add_argument(
         "--no_metadata",
         action="store_true",
-        help="do not save sai modelspec metadata (minimum ss_metadata for LoRA is saved) / "
-        + "sai modelspecのメタデータを保存しない（LoRAの最低限のss_metadataは保存される）",
+        help="do not save sai modelspec metadata (minimum ss_metadata for LoRA is saved) /"
+        + "sai modelspecLoRAss_metadata",
     )
     parser.add_argument(
         "--concat",
         action="store_true",
-        help="concat lora instead of merge (The dim(rank) of the output LoRA is the sum of the input dims) / "
-        + "マージの代わりに結合する（LoRAのdim(rank)は入力dimの合計になる）",
+        help="concat lora instead of merge (The dim(rank) of the output LoRA is the sum of the input dims) /"
+        + "LoRAdim(rank)dim",
     )
     parser.add_argument(
         "--shuffle",
         action="store_true",
-        help="shuffle lora weight./ " + "LoRAの重みをシャッフルする",
+        help="shuffle lora weight./" + "LoRA",
     )
     parser.add_argument(
         "--diffusers",
         action="store_true",
-        help="merge Diffusers (?) LoRA models / Diffusers (?) LoRAモデルをマージする",
+        help="merge Diffusers (?) LoRA models",
     )
 
     return parser

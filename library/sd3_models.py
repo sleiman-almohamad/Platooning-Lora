@@ -90,8 +90,7 @@ def get_2d_sincos_pos_embed_from_grid(embed_dim, grid):
 
 
 def get_scaled_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0, sample_size=64, base_size=16):
-    """
-    This function is contributed by KohakuBlueleaf. Thanks for the contribution!
+    """This function is contributed by KohakuBlueleaf. Thanks for the contribution!
 
     Creates scaled 2D sinusoidal positional embeddings that maintain consistent relative positions
     when the resolution differs from the training resolution.
@@ -106,8 +105,7 @@ def get_scaled_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_
 
     Returns:
         numpy.ndarray: Positional embeddings of shape (H*W, embed_dim) or
-                      (H*W + extra_tokens, embed_dim) if cls_token is True.
-    """
+                      (H*W + extra_tokens, embed_dim) if cls_token is True."""
     # Convert grid_size to tuple if it's an integer
     if isinstance(grid_size, int):
         grid_size = (grid_size, grid_size)
@@ -162,11 +160,9 @@ def get_scaled_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_
 
 
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
-    """
-    embed_dim: output dimension for each position
+    """embed_dim: output dimension for each position
     pos: a list of positions to be encoded: size (M,)
-    out: (M, D)
-    """
+    out: (M, D)"""
     assert embed_dim % 2 == 0
     omega = np.arange(embed_dim // 2, dtype=np.float64)
     omega /= embed_dim / 2.0
@@ -402,15 +398,13 @@ class RMSNorm(torch.nn.Module):
         device=None,
         dtype=None,
     ):
-        """
-        Initialize the RMSNorm normalization layer.
+        """Initialize the RMSNorm normalization layer.
         Args:
             dim (int): The dimension of the input tensor.
             eps (float, optional): A small value added to the denominator for numerical stability. Default is 1e-6.
         Attributes:
             eps (float): A small value added to the denominator for numerical stability.
-            weight (nn.Parameter): Learnable scaling parameter.
-        """
+            weight (nn.Parameter): Learnable scaling parameter."""
         super().__init__()
         self.eps = eps
         self.learnable_scale = elementwise_affine
@@ -420,13 +414,11 @@ class RMSNorm(torch.nn.Module):
             self.register_parameter("weight", None)
 
     def forward(self, x):
-        """
-        Forward pass through the RMSNorm layer.
+        """Forward pass through the RMSNorm layer.
         Args:
             x (torch.Tensor): The input tensor.
         Returns:
-            torch.Tensor: The output tensor after applying RMSNorm.
-        """
+            torch.Tensor: The output tensor after applying RMSNorm."""
         x = rmsnorm(x, eps=self.eps)
         if self.learnable_scale:
             return x * self.weight.to(device=x.device, dtype=x.dtype)
@@ -489,10 +481,8 @@ class AttentionLinears(nn.Module):
             raise ValueError(qk_norm)
 
     def pre_attention(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        output:
-            q, k, v: [B, L, D]
-        """
+        """output:
+            q, k, v: [B, L, D]"""
         B, L, C = x.shape
         qkv: torch.Tensor = self.qkv(x)
         q, k, v = qkv.reshape(B, L, -1, self.head_dim).chunk(3, dim=2)
@@ -543,9 +533,7 @@ def vanilla_attention(q, k, v, mask, scale=None):
 
 
 def attention(q, k, v, head_dim, mask=None, scale=None, mode="xformers"):
-    """
-    q, k, v: [B, L, D]
-    """
+    """q, k, v: [B, L, D]"""
     pre_attn_layout = MEMORY_LAYOUTS[mode][0]
     post_attn_layout = MEMORY_LAYOUTS[mode][1]
     q = pre_attn_layout(q, head_dim)
@@ -1107,12 +1095,10 @@ class MMDiT(nn.Module):
         y: Optional[torch.Tensor] = None,
         context: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        """
-        Forward pass of DiT.
+        """Forward pass of DiT.
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
-        y: (N, D) tensor of class labels
-        """
+        y: (N, D) tensor of class labels"""
         pos_emb_random_crop = (
             False if self.pos_emb_random_crop_rate == 0.0 else torch.rand(1).item() < self.pos_emb_random_crop_rate
         )

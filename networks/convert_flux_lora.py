@@ -1,6 +1,5 @@
 # convert key mapping and data format from some LoRA format to another
-"""
-Original LoRA format: Based on Black Forest Labs, QKV and MLP are unified into one module
+"""Original LoRA format: Based on Black Forest Labs, QKV and MLP are unified into one module
 alpha is scalar for each LoRA module
 
 0 to 18
@@ -44,10 +43,8 @@ lora_unet_single_blocks_0_linear2.lora_down.weight torch.Size([4, 15360])
 lora_unet_single_blocks_0_linear2.lora_up.weight torch.Size([3072, 4])
 lora_unet_single_blocks_0_modulation_lin.alpha torch.Size([])
 lora_unet_single_blocks_0_modulation_lin.lora_down.weight torch.Size([4, 3072])
-lora_unet_single_blocks_0_modulation_lin.lora_up.weight torch.Size([9216, 4])
-"""
-"""
-ai-toolkit: Based on Diffusers, QKV and MLP are separated into 3 modules.
+lora_unet_single_blocks_0_modulation_lin.lora_up.weight torch.Size([9216, 4])"""
+"""ai-toolkit: Based on Diffusers, QKV and MLP are separated into 3 modules.
 A is down, B is up. No alpha for each LoRA module.
 
 0 to 18
@@ -92,10 +89,8 @@ transformer.single_transformer_blocks.0.norm.linear.lora_B.weight torch.Size([92
 transformer.single_transformer_blocks.0.proj_mlp.lora_A.weight torch.Size([16, 3072])
 transformer.single_transformer_blocks.0.proj_mlp.lora_B.weight torch.Size([12288, 16])
 transformer.single_transformer_blocks.0.proj_out.lora_A.weight torch.Size([16, 15360])
-transformer.single_transformer_blocks.0.proj_out.lora_B.weight torch.Size([3072, 16])
-"""
-"""
-xlabs: Unknown format.
+transformer.single_transformer_blocks.0.proj_out.lora_B.weight torch.Size([3072, 16])"""
+"""xlabs: Unknown format.
 0 to 18
 double_blocks.0.processor.proj_lora1.down.weight torch.Size([16, 3072])
 double_blocks.0.processor.proj_lora1.up.weight torch.Size([3072, 16])
@@ -104,8 +99,7 @@ double_blocks.0.processor.proj_lora2.up.weight torch.Size([3072, 16])
 double_blocks.0.processor.qkv_lora1.down.weight torch.Size([16, 3072])
 double_blocks.0.processor.qkv_lora1.up.weight torch.Size([9216, 16])
 double_blocks.0.processor.qkv_lora2.down.weight torch.Size([16, 3072])
-double_blocks.0.processor.qkv_lora2.up.weight torch.Size([9216, 16])
-"""
+double_blocks.0.processor.qkv_lora2.up.weight torch.Size([9216, 16])"""
 
 
 import argparse
@@ -413,7 +407,7 @@ def main(args):
     elif args.src == "sd-scripts" and args.dst == "ai-toolkit":
         state_dict = convert_sd_scripts_to_ai_toolkit(state_dict)
 
-        # eliminate 'shared tensors' 
+        # eliminate 'shared tensors'
         for k in list(state_dict.keys()):
             state_dict[k] = state_dict[k].detach().clone()
     else:

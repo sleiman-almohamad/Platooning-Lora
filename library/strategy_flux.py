@@ -41,10 +41,8 @@ class FluxTokenizeStrategy(TokenizeStrategy):
 
 class FluxTextEncodingStrategy(TextEncodingStrategy):
     def __init__(self, apply_t5_attn_mask: Optional[bool] = None) -> None:
-        """
-        Args:
-            apply_t5_attn_mask: Default value for apply_t5_attn_mask.
-        """
+        """Args:
+            apply_t5_attn_mask: Default value for apply_t5_attn_mask."""
         self.apply_t5_attn_mask = apply_t5_attn_mask
 
     def encode_tokens(
@@ -149,7 +147,7 @@ class FluxTextEncoderOutputsCachingStrategy(TextEncoderOutputsCachingStrategy):
             if flux_utils.get_t5xxl_actual_dtype(models[1]) == torch.float8_e4m3fn:
                 logger.warning(
                     "T5 model is using fp8 weights for caching. This may affect the quality of the cached outputs."
-                    " / T5モデルはfp8の重みを使用しています。これはキャッシュの品質に影響を与える可能性があります。"
+                    ""
                 )
             self.warn_fp8_weights = True
 

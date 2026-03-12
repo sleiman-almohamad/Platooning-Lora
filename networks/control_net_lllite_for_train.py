@@ -1,4 +1,4 @@
-# cond_imageをU-Netのforwardで渡すバージョンのControlNet-LLLite検証用実装
+
 # ControlNet-LLLite implementation for verification with cond_image passed in U-Net's forward
 
 import os
@@ -13,30 +13,30 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# input_blocksに適用するかどうか / if True, input_blocks are not applied
+# if True, input_blocks are not applied
 SKIP_INPUT_BLOCKS = False
 
-# output_blocksに適用するかどうか / if True, output_blocks are not applied
+# if True, output_blocks are not applied
 SKIP_OUTPUT_BLOCKS = True
 
-# conv2dに適用するかどうか / if True, conv2d are not applied
+# if True, conv2d are not applied
 SKIP_CONV2D = False
 
-# transformer_blocksのみに適用するかどうか。Trueの場合、ResBlockには適用されない
+
 # if True, only transformer_blocks are applied, and ResBlocks are not applied
 TRANSFORMER_ONLY = True  # if True, SKIP_CONV2D is ignored because conv2d is not used in transformer_blocks
 
-# Trueならattn1とattn2にのみ適用し、ffなどには適用しない / if True, apply only to attn1 and attn2, not to ff etc.
+# if True, apply only to attn1 and attn2, not to ff etc.
 ATTN1_2_ONLY = True
 
-# Trueならattn1のQKV、attn2のQにのみ適用する、ATTN1_2_ONLY指定時のみ有効 / if True, apply only to attn1 QKV and attn2 Q, only valid when ATTN1_2_ONLY is specified
+# if True, apply only to attn1 QKV and attn2 Q, only valid when ATTN1_2_ONLY is specified
 ATTN_QKV_ONLY = True
 
-# Trueならattn1やffなどにのみ適用し、attn2などには適用しない / if True, apply only to attn1 and ff, not to attn2
-# ATTN1_2_ONLYと同時にTrueにできない / cannot be True at the same time as ATTN1_2_ONLY
+# if True, apply only to attn1 and ff, not to attn2
+# cannot be True at the same time as ATTN1_2_ONLY
 ATTN1_ETC_ONLY = False  # True
 
-# transformer_blocksの最大インデックス。Noneなら全てのtransformer_blocksに適用
+
 # max index of transformer_blocks. if None, apply to all transformer_blocks
 TRANSFORMER_MAX_BLOCK_INDEX = None
 
@@ -45,7 +45,7 @@ ORIGINAL_CONV2D = torch.nn.Conv2d
 
 
 def add_lllite_modules(module: torch.nn.Module, in_dim: int, depth, cond_emb_dim, mlp_dim) -> None:
-    # conditioning1はconditioning imageを embedding する。timestepごとに呼ばれない
+    
     # conditioning1 embeds conditioning image. it is not called for each timestep
     modules = []
     modules.append(ORIGINAL_CONV2D(3, cond_emb_dim // 2, kernel_size=4, stride=4, padding=0))  # to latent (from VAE) size
@@ -56,7 +56,7 @@ def add_lllite_modules(module: torch.nn.Module, in_dim: int, depth, cond_emb_dim
         modules.append(torch.nn.ReLU(inplace=True))
         modules.append(ORIGINAL_CONV2D(cond_emb_dim // 2, cond_emb_dim, kernel_size=4, stride=4, padding=0))
     elif depth == 3:
-        # kernel size 8は大きすぎるので、4にする / kernel size 8 is too large, so set it to 4
+        # kernel size 8 is too large, so set it to 4
         modules.append(torch.nn.ReLU(inplace=True))
         modules.append(ORIGINAL_CONV2D(cond_emb_dim // 2, cond_emb_dim // 2, kernel_size=4, stride=4, padding=0))
         modules.append(torch.nn.ReLU(inplace=True))
@@ -64,10 +64,10 @@ def add_lllite_modules(module: torch.nn.Module, in_dim: int, depth, cond_emb_dim
 
     module.lllite_conditioning1 = torch.nn.Sequential(*modules)
 
-    # downで入力の次元数を削減する。LoRAにヒントを得ていることにする
-    # midでconditioning image embeddingと入力を結合する
-    # upで元の次元数に戻す
-    # これらはtimestepごとに呼ばれる
+    
+    
+    
+    
     # reduce the number of input dimensions with down. inspired by LoRA
     # combine conditioning image embedding and input with mid
     # restore to the original dimension with up
@@ -85,7 +85,7 @@ def add_lllite_modules(module: torch.nn.Module, in_dim: int, depth, cond_emb_dim
         ORIGINAL_LINEAR(mlp_dim, in_dim),
     )
 
-    # Zero-Convにする / set to Zero-Conv
+    # set to Zero-Conv
     torch.nn.init.zeros_(module.lllite_up[0].weight)  # zero conv
 
 
@@ -127,7 +127,7 @@ class LLLiteLinear(ORIGINAL_LINEAR):
 
         cx = self.lllite_up(cx) * self.multiplier
 
-        x = super().forward(x + cx)  # ここで元のモジュールを呼び出す / call the original module here
+        x = super().forward(x + cx)  # call the original module here
         return x
 
 
@@ -167,7 +167,7 @@ class LLLiteConv2d(ORIGINAL_CONV2D):
 
         cx = self.up(cx) * self.multiplier
 
-        x = super().forward(x + cx)  # ここで元のモジュールを呼び出す / call the original module here
+        x = super().forward(x + cx)  # call the original module here
         return x
 
 
@@ -201,7 +201,7 @@ class SdxlUNet2DConditionModelControlNetLLLite(sdxl_original_unet.SdxlUNet2DCond
                         is_conv2d = child_module.__class__.__name__ == "LLLiteConv2d"
 
                         if is_linear or (is_conv2d and not SKIP_CONV2D):
-                            # block indexからdepthを計算: depthはconditioningのサイズやチャネルを計算するのに使う
+                            
                             # block index to depth: depth is using to calculate conditioning size and channels
                             block_name, index1, index2 = (name + "." + child_name).split(".")[:3]
                             index1 = int(index1)
@@ -230,8 +230,8 @@ class SdxlUNet2DConditionModelControlNetLLLite(sdxl_original_unet.SdxlUNet2DCond
                                     if tf_index > TRANSFORMER_MAX_BLOCK_INDEX:
                                         continue
 
-                            #  time embは適用外とする
-                            # attn2のconditioning (CLIPからの入力) はshapeが違うので適用できない
+                            
+                            
                             # time emb is not applied
                             # attn2 conditioning (input from CLIP) cannot be applied because the shape is different
                             if "emb_layers" in lllite_name or (
@@ -336,13 +336,8 @@ class SdxlUNet2DConditionModelControlNetLLLite(sdxl_original_unet.SdxlUNet2DCond
             torch.save(state_dict, file)
 
     def load_lllite_weights(self, file, non_lllite_unet_sd=None):
-        r"""
-        LLLiteの重みを読み込まない（initされた値を使う）場合はfileにNoneを指定する。
-        この場合、non_lllite_unet_sdにはU-Netのstate_dictを指定する。
-
-        If you do not want to load LLLite weights (use initialized values), specify None for file.
-        In this case, specify the state_dict of U-Net for non_lllite_unet_sd.
-        """
+        r"""specify None for file.
+        In this case, specify the state_dict of U-Net for non_lllite_unet_sd."""
         if not file:
             state_dict = self.state_dict()
             for key in non_lllite_unet_sd:
@@ -380,10 +375,10 @@ class SdxlUNet2DConditionModelControlNetLLLite(sdxl_original_unet.SdxlUNet2DCond
             weight_name = key[pos + 1 :]  # exclude "."
             module_name = module_name.replace(SdxlUNet2DConditionModelControlNetLLLite.LLLITE_PREFIX + "_", "")
 
-            # これはうまくいかない。逆変換を考えなかった設計が悪い / this does not work well. bad design because I didn't think about inverse conversion
+            # this does not work well. bad design because I didn't think about inverse conversion
             # module_name = module_name.replace("_", ".")
 
-            # ださいけどSDXLのU-Netの "_" を "@" に変換する / ugly but convert "_" of SDXL U-Net to "@"
+            # ugly but convert "_" of SDXL U-Net to "@"
             matches = pattern.findall(module_name)
             if matches is not None:
                 for m in matches:
@@ -412,7 +407,7 @@ def replace_unet_linear_and_conv2d():
 
 
 if __name__ == "__main__":
-    # デバッグ用 / for debug
+    # for debug
 
     # sdxl_original_unet.USE_REENTRANT = False
     replace_unet_linear_and_conv2d()
@@ -461,7 +456,7 @@ if __name__ == "__main__":
     # image = torchviz.make_dot(output, params=dict(controlnet.named_parameters()))
     # logger.info("render")
     # image.format = "svg" # "png"
-    # image.render("NeuralNet") # すごく時間がかかるので注意 / be careful because it takes a long time
+    # be careful because it takes a long time
     # input()
 
     import bitsandbytes

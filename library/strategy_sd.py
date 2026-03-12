@@ -15,14 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 TOKENIZER_ID = "openai/clip-vit-large-patch14"
-V2_STABLE_DIFFUSION_ID = "stabilityai/stable-diffusion-2"  # ここからtokenizerだけ使う v2とv2.1はtokenizer仕様は同じ
+V2_STABLE_DIFFUSION_ID = "stabilityai/stable-diffusion-2"  
 
 
 class SdTokenizeStrategy(TokenizeStrategy):
     def __init__(self, v2: bool, max_length: Optional[int], tokenizer_cache_dir: Optional[str] = None) -> None:
-        """
-        max_length does not include <BOS> and <EOS> (None, 75, 150, 225)
-        """
+        """max_length does not include <BOS> and <EOS> (None, 75, 150, 225)"""
         logger.info(f"Using {'v2' if v2 else 'v1'} tokenizer")
         if v2:
             self.tokenizer = self._load_tokenizer(
@@ -83,23 +81,23 @@ class SdTextEncodingStrategy(TextEncodingStrategy):
         if max_token_length != model_max_length:
             v1 = sd_tokenize_strategy.tokenizer.pad_token_id == sd_tokenize_strategy.tokenizer.eos_token_id
             if not v1:
-                # v2: <BOS>...<EOS> <PAD> ... の三連を <BOS>...<EOS> <PAD> ... へ戻す　正直この実装でいいのかわからん
+                # v2
                 states_list = [encoder_hidden_states[:, 0].unsqueeze(1)]  # <BOS>
                 for i in range(1, max_token_length, model_max_length):
-                    chunk = encoder_hidden_states[:, i : i + model_max_length - 2]  # <BOS> の後から 最後の前まで
+                    chunk = encoder_hidden_states[:, i : i + model_max_length - 2]  
                     if i > 0:
                         for j in range(len(chunk)):
                             if tokens[j, 1] == sd_tokenize_strategy.tokenizer.eos_token:
-                                # 空、つまり <BOS> <EOS> <PAD> ...のパターン
-                                chunk[j, 0] = chunk[j, 1]  # 次の <PAD> の値をコピーする
-                    states_list.append(chunk)  # <BOS> の後から <EOS> の前まで
-                states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  # <EOS> か <PAD> のどちらか
+                                
+                                chunk[j, 0] = chunk[j, 1]  
+                    states_list.append(chunk)  
+                states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  
                 encoder_hidden_states = torch.cat(states_list, dim=1)
             else:
-                # v1: <BOS>...<EOS> の三連を <BOS>...<EOS> へ戻す
+                # v1
                 states_list = [encoder_hidden_states[:, 0].unsqueeze(1)]  # <BOS>
                 for i in range(1, max_token_length, model_max_length):
-                    states_list.append(encoder_hidden_states[:, i : i + model_max_length - 2])  # <BOS> の後から <EOS> の前まで
+                    states_list.append(encoder_hidden_states[:, i : i + model_max_length - 2])  
                 states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  # <EOS>
                 encoder_hidden_states = torch.cat(states_list, dim=1)
 

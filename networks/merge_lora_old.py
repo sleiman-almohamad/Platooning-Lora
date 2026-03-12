@@ -106,14 +106,14 @@ def merge_lora_models(models, ratios, merge_dtype):
     for key in lora_sd.keys():
       if 'alpha' in key:
         if key in merged_sd:
-          assert merged_sd[key] == lora_sd[key], f"alpha mismatch / alphaが異なる場合、現時点ではマージできません"
+          assert merged_sd[key] == lora_sd[key], f"alpha mismatch"
         else:
           alpha = lora_sd[key].detach().numpy()
           merged_sd[key] = lora_sd[key]
       else:
         if key in merged_sd:
           assert merged_sd[key].size() == lora_sd[key].size(
-          ), f"weights shape mismatch merging v1 and v2, different dims? / 重みのサイズが合いません。v1とv2、または次元数の異なるモデルはマージできません"
+          ), f"weights shape mismatch merging v1 and v2, different dims?"
           merged_sd[key] = merged_sd[key] + lora_sd[key] * ratio
         else:
           if "lora_down" in key:
@@ -128,7 +128,7 @@ def merge_lora_models(models, ratios, merge_dtype):
 
 
 def merge(args):
-  assert len(args.models) == len(args.ratios), f"number of models must be equal to number of ratios / モデルの数と重みの数は合わせてください"
+  assert len(args.models) == len(args.ratios), f"number of models must be equal to number of ratios"
 
   def str_to_dtype(p):
     if p == 'float':
@@ -166,19 +166,19 @@ def merge(args):
 def setup_parser() -> argparse.ArgumentParser:
   parser = argparse.ArgumentParser()
   parser.add_argument("--v2", action='store_true',
-                      help='load Stable Diffusion v2.x model / Stable Diffusion 2.xのモデルを読み込む')
+                      help='load Stable Diffusion v2.x model')
   parser.add_argument("--save_precision", type=str, default=None,
-                      choices=[None, "float", "fp16", "bf16"], help="precision in saving, same to merging if omitted / 保存時に精度を変更して保存する、省略時はマージ時の精度と同じ")
+                      choices=[None, "float", "fp16", "bf16"], help="precision in saving, same to merging if omitted")
   parser.add_argument("--precision", type=str, default="float",
-                      choices=["float", "fp16", "bf16"], help="precision in merging (float is recommended) / マージの計算時の精度（floatを推奨）")
+                      choices=["float", "fp16", "bf16"], help="precision in merging (float is recommended)")
   parser.add_argument("--sd_model", type=str, default=None,
-                      help="Stable Diffusion model to load: ckpt or safetensors file, merge LoRA models if omitted / 読み込むモデル、ckptまたはsafetensors。省略時はLoRAモデル同士をマージする")
+                      help="Stable Diffusion model to load: ckpt or safetensors file, merge LoRA models if omitted")
   parser.add_argument("--save_to", type=str, default=None,
-                      help="destination file name: ckpt or safetensors file / 保存先のファイル名、ckptまたはsafetensors")
+                      help="destination file name: ckpt or safetensors file")
   parser.add_argument("--models", type=str, nargs='*',
-                      help="LoRA models to merge: ckpt or safetensors file / マージするLoRAモデル、ckptまたはsafetensors")
+                      help="LoRA models to merge: ckpt or safetensors file")
   parser.add_argument("--ratios", type=float, nargs='*',
-                      help="ratios for each model / それぞれのLoRAモデルの比率")
+                      help="ratios for each model")
 
   return parser
 

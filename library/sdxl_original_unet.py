@@ -1,8 +1,7 @@
-# Diffusersのコードをベースとした sd_xl_baseのU-Net
-# state dictの形式をSDXLに合わせてある
 
-"""
-      target: sgm.modules.diffusionmodules.openaimodel.UNetModel
+
+
+"""target: sgm.modules.diffusionmodules.openaimodel.UNetModel
       params:
         adm_in_channels: 2816
         num_classes: sequential
@@ -19,8 +18,7 @@
         transformer_depth: [1, 2, 10]  # note: the first is unused (due to attn_res starting at 2) 32, 16, 8 --> 64, 32, 16
         context_dim: 2048
         spatial_transformer_attn_type: softmax-xformers
-        legacy: False
-"""
+        legacy: False"""
 
 import math
 from types import SimpleNamespace
@@ -48,7 +46,7 @@ USE_REENTRANT = True
 
 # region memory efficient attention
 
-# FlashAttentionを使うCrossAttention
+
 # based on https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/memory_efficient_attention_pytorch/flash_attention.py
 # LICENSE MIT https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/LICENSE
 
@@ -242,14 +240,12 @@ def get_timestep_embedding(
     scale: float = 1,
     max_period: int = 10000,
 ):
-    """
-    This matches the implementation in Denoising Diffusion Probabilistic Models: Create sinusoidal timestep embeddings.
+    """This matches the implementation in Denoising Diffusion Probabilistic Models: Create sinusoidal timestep embeddings.
 
     :param timesteps: a 1-D Tensor of N indices, one per batch element.
                       These may be fractional.
     :param embedding_dim: the dimension of the output. :param max_period: controls the minimum frequency of the
-    embeddings. :return: an [N x dim] Tensor of positional embeddings.
-    """
+    embeddings. :return: an [N x dim] Tensor of positional embeddings."""
     assert len(timesteps.shape) == 1, "Timesteps should be a 1d-array"
 
     half_dim = embedding_dim // 2
@@ -503,7 +499,7 @@ class CrossAttention(nn.Module):
         q = q.contiguous()
         k = k.contiguous()
         v = v.contiguous()
-        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)  # 最適なのを選んでくれる
+        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)  
         del q, k, v
 
         out = rearrange(out, "b n h d -> b n (h d)", h=h)
@@ -555,13 +551,11 @@ class CrossAttention(nn.Module):
 
 # feedforward
 class GEGLU(nn.Module):
-    r"""
-    A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
+    r"""A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
 
     Parameters:
         dim_in (`int`): The number of channels in the input.
-        dim_out (`int`): The number of channels in the output.
-    """
+        dim_out (`int`): The number of channels in the output."""
 
     def __init__(self, dim_in: int, dim_out: int):
         super().__init__()
@@ -1248,7 +1242,7 @@ if __name__ == "__main__":
     unet.set_gradient_checkpointing(True)
     unet.train()
 
-    # 使用メモリ量確認用の疑似学習ループ
+    
     logger.info("preparing optimizer")
 
     # optimizer = torch.optim.SGD(unet.parameters(), lr=1e-3, nesterov=True, momentum=0.9) # not working

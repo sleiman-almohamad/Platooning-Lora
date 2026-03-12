@@ -83,16 +83,14 @@ def create_network(
 
     # double/single train blocks
     def parse_block_selection(selection: str, total_blocks: int) -> List[bool]:
-        """
-        Parse a block selection string and return a list of booleans.
+        """Parse a block selection string and return a list of booleans.
 
         Args:
         selection (str): A string specifying which blocks to select.
         total_blocks (int): The total number of blocks available.
 
         Returns:
-        List[bool]: A list of booleans indicating which blocks are selected.
-        """
+        List[bool]: A list of booleans indicating which blocks are selected."""
         if selection == "all":
             return [True] * total_blocks
         if selection == "none" or selection == "":
@@ -145,7 +143,7 @@ def create_network(
     if verbose is not None:
         verbose = True if verbose == "True" else False
 
-    # すごく引数が多いな ( ^ω^)･･･
+    
     network = LoRANetwork(
         text_encoders,
         mmdit,
@@ -343,12 +341,12 @@ class LoRANetwork(torch.nn.Module):
                             alpha = None
 
                             if modules_dim is not None:
-                                # モジュール指定あり
+                                
                                 if lora_name in modules_dim:
                                     dim = modules_dim[lora_name]
                                     alpha = modules_alpha[lora_name]
                             else:
-                                # 通常、すべて対象とする
+                                
                                 if is_linear or is_conv2d_1x1:
                                     dim = default_dim if default_dim is not None else self.lora_dim
                                     alpha = self.alpha
@@ -383,7 +381,7 @@ class LoRANetwork(torch.nn.Module):
                                     alpha = self.alpha
 
                             if dim is None or dim == 0:
-                                # skipした情報を出力
+                                
                                 if is_linear or is_conv2d_1x1 or (self.conv_lora_dim is not None):
                                     skipped.append(lora_name)
                                 continue
@@ -412,7 +410,7 @@ class LoRANetwork(torch.nn.Module):
             return loras, skipped
 
         # create LoRA for text encoder
-        # 毎回すべてのモジュールを作るのは無駄なので要検討
+        
         self.text_encoder_loras: List[Union[LoRAModule, LoRAInfModule]] = []
         skipped_te = []
         for i, text_encoder in enumerate(text_encoders):
@@ -460,7 +458,7 @@ class LoRANetwork(torch.nn.Module):
         skipped = skipped_te + skipped_un
         if verbose and len(skipped) > 0:
             logger.warning(
-                f"because dim (rank) is 0, {len(skipped)} LoRA modules are skipped / dim (rank)が0の為、次の{len(skipped)}個のLoRAモジュールはスキップされます:"
+                f"because dim (rank) is 0, {len(skipped)} LoRA modules are skipped"
             )
             for name in skipped:
                 logger.info(f"\t{name}")
@@ -587,7 +585,7 @@ class LoRANetwork(torch.nn.Module):
             lora.apply_to()
             self.add_module(lora.lora_name, lora)
 
-    # マージできるかどうかを返す
+    
     def is_mergeable(self):
         return True
 
@@ -759,7 +757,7 @@ class LoRANetwork(torch.nn.Module):
             torch.save(state_dict, file)
 
     def backup_weights(self):
-        # 重みのバックアップを行う
+        
         loras: List[LoRAInfModule] = self.text_encoder_loras + self.unet_loras
         for lora in loras:
             org_module = lora.org_module_ref[0]
@@ -769,7 +767,7 @@ class LoRANetwork(torch.nn.Module):
                 org_module._lora_restored = True
 
     def restore_weights(self):
-        # 重みのリストアを行う
+        
         loras: List[LoRAInfModule] = self.text_encoder_loras + self.unet_loras
         for lora in loras:
             org_module = lora.org_module_ref[0]
@@ -780,7 +778,7 @@ class LoRANetwork(torch.nn.Module):
                 org_module._lora_restored = True
 
     def pre_calculation(self):
-        # 事前計算を行う
+        
         loras: List[LoRAInfModule] = self.text_encoder_loras + self.unet_loras
         for lora in loras:
             org_module = lora.org_module_ref[0]

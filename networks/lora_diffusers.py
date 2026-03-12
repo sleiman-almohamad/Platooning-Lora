@@ -1,4 +1,4 @@
-# Diffusersで動くLoRA。このファイル単独で完結する。
+
 # LoRA module for Diffusers. This file works independently.
 
 import bisect
@@ -108,9 +108,7 @@ UNET_CONVERSION_MAP = make_unet_conversion_map()
 
 
 class LoRAModule(torch.nn.Module):
-    """
-    replaces forward method of the original Linear, instead of replacing the original Linear module.
-    """
+    """replaces forward method of the original Linear, instead of replacing the original Linear module."""
 
     def __init__(
         self,
@@ -147,7 +145,7 @@ class LoRAModule(torch.nn.Module):
             alpha = alpha.detach().float().numpy()  # without casting, bf16 causes error
         alpha = self.lora_dim if alpha is None or alpha == 0 else alpha
         self.scale = alpha / self.lora_dim
-        self.register_buffer("alpha", torch.tensor(alpha))  # 勾配計算に含めない / not included in gradient calculation
+        self.register_buffer("alpha", torch.tensor(alpha))  # not included in gradient calculation
 
         # same as microsoft's
         torch.nn.init.kaiming_uniform_(self.lora_down.weight, a=math.sqrt(5))
@@ -274,7 +272,7 @@ def merge_lora_weights(pipe, weights_sd: Dict, multiplier: float = 1.0):
     lora_network.merge_to(multiplier=multiplier)
 
 
-# block weightや学習に対応しない簡易版 / simple version without block weight and training
+# simple version without block weight and training
 class LoRANetwork(torch.nn.Module):
     UNET_TARGET_REPLACE_MODULE = ["Transformer2DModel"]
     UNET_TARGET_REPLACE_MODULE_CONV2D_3X3 = ["ResnetBlock2D", "Downsample2D", "Upsample2D"]
@@ -357,7 +355,7 @@ class LoRANetwork(torch.nn.Module):
         text_encoders = text_encoder if type(text_encoder) == list else [text_encoder]
 
         # create LoRA for text encoder
-        # 毎回すべてのモジュールを作るのは無駄なので要検討 / it is wasteful to create all modules every time, need to consider
+        # it is wasteful to create all modules every time, need to consider
         self.text_encoder_loras: List[LoRAModule] = []
         skipped_te = []
         for i, text_encoder in enumerate(text_encoders):
@@ -527,7 +525,7 @@ if __name__ == "__main__":
 
     lora_network.to(device, dtype=pipe.unet.dtype)  # required to apply_to. merge_to works without this
 
-    # 必要があれば、元のモデルの重みをバックアップしておく
+    
     # back-up unet/text encoder weights if necessary
     def detach_and_move_to_cpu(state_dict):
         for k, v in state_dict.items():
@@ -584,8 +582,8 @@ if __name__ == "__main__":
     image.save(image_prefix + "merged_lora.png")
 
     # restore (unmerge) LoRA weights: numerically unstable
-    # マージされた重みを元に戻す。計算誤差のため、元の重みと完全に一致しないことがあるかもしれない
-    # 保存したstate_dictから元の重みを復元するのが確実
+    
+    
     logger.info(f"restore (unmerge) LoRA weights")
     lora_network.restore_from(multiplier=1.0)
 

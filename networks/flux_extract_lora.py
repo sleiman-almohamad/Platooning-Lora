@@ -155,59 +155,59 @@ def setup_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         choices=[None, "float", "fp16", "bf16"],
-        help="precision in saving, same to merging if omitted / 保存時に精度を変更して保存する、省略時はfloat",
+        help="precision in saving, same to merging if omitted",
     )
     parser.add_argument(
         "--model_org",
         type=str,
         default=None,
         required=True,
-        help="Original model: safetensors file / 元モデル、safetensors",
+        help="Original model: safetensors file",
     )
     parser.add_argument(
         "--model_tuned",
         type=str,
         default=None,
         required=True,
-        help="Tuned model, LoRA is difference of `original to tuned`: safetensors file / 派生モデル（生成されるLoRAは元→派生の差分になります）、ckptまたはsafetensors",
+        help="Tuned model, LoRA is difference of `original to tuned`: safetensors file",
     )
     parser.add_argument(
         "--mem_eff_safe_open",
         action="store_true",
         help="use memory efficient safe_open. This is an experimental feature, use only when memory is not enough."
-        " / メモリ効率の良いsafe_openを使用する。実装は実験的なものなので、メモリが足りない場合のみ使用してください。",
+        "",
     )
     parser.add_argument(
         "--save_to",
         type=str,
         default=None,
         required=True,
-        help="destination file name: safetensors file / 保存先のファイル名、safetensors",
+        help="destination file name: safetensors file",
     )
     parser.add_argument(
-        "--dim", type=int, default=4, help="dimension (rank) of LoRA (default 4) / LoRAの次元数（rank）（デフォルト4）"
+        "--dim", type=int, default=4, help="dimension (rank) of LoRA (default 4)"
     )
     parser.add_argument(
-        "--device", type=str, default=None, help="device to use, cuda for GPU / 計算を行うデバイス、cuda でGPUを使う"
+        "--device", type=str, default=None, help="device to use, cuda for GPU"
     )
     parser.add_argument(
         "--clamp_quantile",
         type=float,
         default=0.99,
-        help="Quantile clamping value, float, (0-1). Default = 0.99 / 値をクランプするための分位点、float、(0-1)。デフォルトは0.99",
+        help="Quantile clamping value, float, (0-1). Default = 0.99",
     )
     # parser.add_argument(
     #     "--min_diff",
     #     type=float,
     #     default=0.01,
     #     help="Minimum difference between finetuned model and base to consider them different enough to extract, float, (0-1). Default = 0.01 /"
-    #     + "LoRAを抽出するために元モデルと派生モデルの差分の最小値、float、(0-1)。デフォルトは0.01",
+    
     # )
     parser.add_argument(
         "--no_metadata",
         action="store_true",
-        help="do not save sai modelspec metadata (minimum ss_metadata for LoRA is saved) / "
-        + "sai modelspecのメタデータを保存しない（LoRAの最低限のss_metadataは保存される）",
+        help="do not save sai modelspec metadata (minimum ss_metadata for LoRA is saved) /"
+        + "sai modelspecLoRAss_metadata",
     )
     return parser
 

@@ -59,8 +59,7 @@ def _unscale_grads_(self, optimizer, inv_scale, found_inf, allow_fp16): # pylint
     return per_device_found_inf._per_device_tensors
 
 def unscale_(self, optimizer):
-    """
-    Divides ("unscales") the optimizer's gradient tensors by the scale factor.
+    """Divides ("unscales") the optimizer's gradient tensors by the scale factor.
     :meth:`unscale_` is optional, serving cases where you need to
     :ref:`modify or inspect gradients<working-with-unscaled-gradients>`
     between the backward pass(es) and :meth:`step`.
@@ -79,8 +78,7 @@ def unscale_(self, optimizer):
         and only after all gradients for that optimizer's assigned parameters have been accumulated.
         Calling :meth:`unscale_` twice for a given optimizer between each :meth:`step` triggers a RuntimeError.
     .. warning::
-        :meth:`unscale_` may unscale sparse gradients out of place, replacing the ``.grad`` attribute.
-    """
+        :meth:`unscale_` may unscale sparse gradients out of place, replacing the ``.grad`` attribute."""
     if not self._enabled:
         return
 
@@ -111,8 +109,7 @@ def unscale_(self, optimizer):
     optimizer_state["stage"] = OptState.UNSCALED
 
 def update(self, new_scale=None):
-    """
-    Updates the scale factor.
+    """Updates the scale factor.
     If any optimizer steps were skipped the scale is multiplied by ``backoff_factor``
     to reduce it. If ``growth_interval`` unskipped iterations occurred consecutively,
     the scale is multiplied by ``growth_factor`` to increase it.
@@ -124,8 +121,7 @@ def update(self, new_scale=None):
         new_scale (float or :class:`torch.FloatTensor`, optional, default=None):  New scale factor.
     .. warning::
         :meth:`update` should only be called at the end of the iteration, after ``scaler.step(optimizer)`` has
-        been invoked for all optimizers used this iteration.
-    """
+        been invoked for all optimizers used this iteration."""
     if not self._enabled:
         return
 

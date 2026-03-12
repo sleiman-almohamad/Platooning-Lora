@@ -57,7 +57,7 @@ class NetworkTrainer:
         self.vae_scale_factor = 0.18215
         self.is_sdxl = False
 
-    # TODO 
+    # TODO
     def generate_step_logs(
         self,
         args: argparse.Namespace,
@@ -138,9 +138,7 @@ class NetworkTrainer:
     def accelerator_logging(
         self, accelerator: Accelerator, logs: dict, step_value: int, global_step: int, epoch: int, val_step: Optional[int] = None
     ):
-        """
-        step_value is for tensorboard, other values are for wandb
-        """
+        """step_value is for tensorboard, other values are for wandb"""
         tensorboard_tracker = None
         wandb_tracker = None
         other_trackers = []
@@ -178,9 +176,9 @@ class NetworkTrainer:
     def load_target_model(self, args, weight_dtype, accelerator):
         text_encoder, vae, unet, _ = train_util.load_target_model(args, weight_dtype, accelerator)
 
-        # xformers memory efficient attention 
+        # xformers memory efficient attention
         train_util.replace_unet_modules(unet, args.mem_eff_attn, args.xformers, args.sdpa)
-        if torch.__version__ >= "2.0.0":  # PyTorch 2.0.0 
+        if torch.__version__ >= "2.0.0":  # PyTorch 2.0.0
             vae.set_use_memory_efficient_attention_xformers(args.xformers)
 
         return model_util.get_model_version_str_for_sd1_sd2(args.v2, args.v_parameterization), text_encoder, vae, unet
@@ -204,10 +202,8 @@ class NetworkTrainer:
         return None
 
     def get_models_for_text_encoding(self, args, accelerator, text_encoders):
-        """
-        Returns a list of models that will be used for text encoding. SDXL uses wrapped and unwrapped models.
-        FLUX.1 and SD3 may cache some outputs of the text encoder, so return the models that will be used for encoding (not cached).
-        """
+        """Returns a list of models that will be used for text encoding. SDXL uses wrapped and unwrapped models.
+        FLUX.1 and SD3 may cache some outputs of the text encoder, so return the models that will be used for encoding (not cached)."""
         return text_encoders
 
     # returns a list of bool values indicating whether each text encoder should be trained
@@ -509,7 +505,7 @@ class NetworkTrainer:
                 if any(getattr(args, attr) is not None for attr in ignored):
                     logger.warning(
                         "ignoring the following options because config file is found: {0}".format(
-                            ", ".join(ignored)
+                            ",".join(ignored)
                         )
                     )
             else:
@@ -611,7 +607,7 @@ class NetworkTrainer:
                 )
                 module.merge_to(text_encoder, unet, weights_sd, weight_dtype, accelerator.device if args.lowram else "cpu")
 
-            accelerator.print(f"all weights merged: {', '.join(args.base_weights)}")
+            accelerator.print(f"all weights merged: {','.join(args.base_weights)}")
 
         if cache_latents:
             vae.to(accelerator.device, dtype=vae_dtype)
@@ -966,7 +962,7 @@ class NetworkTrainer:
         accelerator.print(f"  num batches per epoch : {len(train_dataloader)}")
         accelerator.print(f"  num epochs : {num_train_epochs}")
         accelerator.print(
-            f"  batch size per device : {', '.join([str(d.batch_size) for d in train_dataset_group.datasets])}"
+            f"  batch size per device : {','.join([str(d.batch_size) for d in train_dataset_group.datasets])}"
         )
         accelerator.print(f"  gradient accumulation steps = {args.gradient_accumulation_steps}")
         accelerator.print(f"  total optimization steps: {args.max_train_steps}")
@@ -1119,9 +1115,9 @@ class NetworkTrainer:
 
                 # merge tag frequency:
                 for ds_dir_name, ds_freq_for_dir in dataset.tag_frequency.items():
-                    # あるディレクトリが複数のdatasetで使用されている場合、一度だけ数える
-                    # もともと繰り返し回数を指定しているので、キャプション内でのタグの出現回数と、それが学習で何度使われるかは一致しない
-                    # なので、ここで複数datasetの回数を合算してもあまり意味はない
+                    
+                    
+                    
                     if ds_dir_name in tag_frequency:
                         continue
                     tag_frequency[ds_dir_name] = ds_freq_for_dir

@@ -522,14 +522,12 @@ class EmbedND(nn.Module):
 
 
 def timestep_embedding(t: Tensor, dim, max_period=10000, time_factor: float = 1000.0):
-    """
-    Create sinusoidal timestep embeddings.
+    """Create sinusoidal timestep embeddings.
     :param t: a 1-D Tensor of N indices, one per batch element.
                       These may be fractional.
     :param dim: the dimension of the output.
     :param max_period: controls the minimum frequency of the embeddings.
-    :return: an (N, D) Tensor of positional embeddings.
-    """
+    :return: an (N, D) Tensor of positional embeddings."""
     t = time_factor * t
     half = dim // 2
     freqs = torch.exp(-math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half).to(t.device)
@@ -760,10 +758,8 @@ class DoubleStreamBlock(nn.Module):
 
 
 class SingleStreamBlock(nn.Module):
-    """
-    A DiT block with parallel linear layers as described in
-    https://arxiv.org/abs/2302.05442 and adapted modulation interface.
-    """
+    """A DiT block with parallel linear layers as described in
+    https://arxiv.org/abs/2302.05442 and adapted modulation interface."""
 
     def __init__(
         self,
@@ -1322,8 +1318,7 @@ class ControlNetFlux(nn.Module):
         return controlnet_block_samples, controlnet_single_block_samples
 
 
-"""
-class FluxUpper(nn.Module):
+"""class FluxUpper(nn.Module):
     ""
     Transformer model for flow matching on sequences.
     ""
@@ -1489,5 +1484,4 @@ class FluxLower(nn.Module):
         img = img[:, txt.shape[1] :, ...]
 
         img = self.final_layer(img, vec)  # (N, T, patch_size ** 2 * out_channels)
-        return img
-"""
+        return img"""

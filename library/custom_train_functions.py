@@ -109,7 +109,7 @@ def apply_debiased_estimation(loss: torch.Tensor, timesteps: torch.IntTensor, no
     return loss
 
 
-# TODO train_utilと分散しているのでどちらかに寄せる
+
 
 
 def add_custom_train_arguments(parser: argparse.ArgumentParser, support_weighted_captions: bool = True):
@@ -117,18 +117,18 @@ def add_custom_train_arguments(parser: argparse.ArgumentParser, support_weighted
         "--min_snr_gamma",
         type=float,
         default=None,
-        help="gamma for reducing the weight of high loss timesteps. Lower numbers have stronger effect. 5 is recommended by paper. / 低いタイムステップでの高いlossに対して重みを減らすためのgamma値、低いほど効果が強く、論文では5が推奨",
+        help="gamma for reducing the weight of high loss timesteps. Lower numbers have stronger effect. 5 is recommended by paper.",
     )
     parser.add_argument(
         "--scale_v_pred_loss_like_noise_pred",
         action="store_true",
-        help="scale v-prediction loss like noise prediction loss / v-prediction lossをnoise prediction lossと同じようにスケーリングする",
+        help="scale v-prediction loss like noise prediction loss",
     )
     parser.add_argument(
         "--v_pred_like_loss",
         type=float,
         default=None,
-        help="add v-prediction like loss multiplied by this value / v-prediction lossをこの値をかけたものをlossに加算する",
+        help="add v-prediction like loss multiplied by this value",
     )
     parser.add_argument(
         "--debiased_estimation_loss",
@@ -140,7 +140,7 @@ def add_custom_train_arguments(parser: argparse.ArgumentParser, support_weighted
             "--weighted_captions",
             action="store_true",
             default=False,
-            help="Enable weighted captions in the standard style (token:1.3). No commas inside parens, or shuffle/dropout may break the decoder. / 「[token]」、「(token)」「(token:1.3)」のような重み付きキャプションを有効にする。カンマを括弧内に入れるとシャッフルやdropoutで重みづけがおかしくなるので注意",
+            help="Enable weighted captions in the standard style (token:1.3). No commas inside parens, or shuffle/dropout may break the decoder.",
         )
 
 
@@ -165,8 +165,7 @@ re_attention = re.compile(
 
 
 def parse_prompt_attention(text):
-    """
-    Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+    """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
     Accepted tokens are:
       (abc) - increases attention to abc by a multiplier of 1.1
       (abc:3.12) - increases attention to abc by a multiplier of 3.12
@@ -196,8 +195,7 @@ def parse_prompt_attention(text):
      ['hill', 0.55],
      [', sun, ', 1.1],
      ['sky', 1.4641000000000006],
-     ['.', 1.1]]
-    """
+     ['.', 1.1]]"""
 
     res = []
     round_brackets = []
@@ -251,11 +249,9 @@ def parse_prompt_attention(text):
 
 
 def get_prompts_with_weights(tokenizer, prompt: List[str], max_length: int):
-    r"""
-    Tokenize a list of prompts and return its tokens with weights of each token.
+    r"""Tokenize a list of prompts and return its tokens with weights of each token.
 
-    No padding, starting or ending token is included.
-    """
+    No padding, starting or ending token is included."""
     tokens = []
     weights = []
     truncated = False
@@ -337,9 +333,9 @@ def get_unweighted_text_embeddings(
                 text_input_chunk[:, -1] = text_input[0, -1]
             else:  # v2
                 for j in range(len(text_input_chunk)):
-                    if text_input_chunk[j, -1] != eos and text_input_chunk[j, -1] != pad:  # 最後に普通の文字がある
+                    if text_input_chunk[j, -1] != eos and text_input_chunk[j, -1] != pad:  
                         text_input_chunk[j, -1] = eos
-                    if text_input_chunk[j, 1] == pad:  # BOSだけであとはPAD
+                    if text_input_chunk[j, 1] == pad:  
                         text_input_chunk[j, 1] = eos
 
             if clip_skip is None or clip_skip == 1:
@@ -381,8 +377,7 @@ def get_weighted_text_embeddings(
     no_boseos_middle: Optional[bool] = False,
     clip_skip=None,
 ):
-    r"""
-    Prompts can be assigned with local weights using brackets. For example,
+    r"""Prompts can be assigned with local weights using brackets. For example,
     prompt 'A (very beautiful) masterpiece' highlights the words 'very beautiful',
     and the embedding tokens corresponding to the words get multiplied by a constant, 1.1.
 
@@ -399,8 +394,7 @@ def get_weighted_text_embeddings(
         skip_parsing (`bool`, *optional*, defaults to `False`):
             Skip the parsing of brackets.
         skip_weighting (`bool`, *optional*, defaults to `False`):
-            Skip the weighting. When the parsing is skipped, it is forced True.
-    """
+            Skip the weighting. When the parsing is skipped, it is forced True."""
     max_length = (tokenizer.model_max_length - 2) * max_embeddings_multiples + 2
     if isinstance(prompt, str):
         prompt = [prompt]
@@ -503,8 +497,7 @@ def apply_masked_loss(loss, batch) -> torch.FloatTensor:
     return loss
 
 
-"""
-##########################################
+"""##########################################
 # Perlin Noise
 def rand_perlin_2d(device, shape, res, fade=lambda t: 6 * t**5 - 15 * t**4 + 10 * t**3):
     delta = (res[0] / shape[0], res[1] / shape[1])
@@ -557,5 +550,4 @@ def perlin_noise(noise, device, octaves):
         noise_perlin.append(perlin())
     noise_perlin = torch.stack(noise_perlin).unsqueeze(0)   # (1, c, w, h)
     noise += noise_perlin # broadcast for each batch
-    return noise / noise.std()  # Scaled back to roughly unit variance
-"""
+    return noise / noise.std()  # Scaled back to roughly unit variance"""

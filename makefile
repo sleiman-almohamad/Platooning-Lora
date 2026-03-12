@@ -35,26 +35,46 @@ BASE_MODEL := $(firstword $(wildcard *.safetensors))
 BASE_MODEL_URL := https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors
 DATASET_DIR := dataset
 OUTPUT_DIR := Output_Lora_training
-CONFIG_FILE := training_pars_lora.toml
+#CONFIG_FILE := training_pars_lora.toml
 
 .PHONY: init train clean show-os
 
 # --- Main Targets ---
 init: show-os | install-uv create-venv check-dataset download-model
-	@echo "✓ Initialization complete"
+	@echo "Initialization complete"
 
 show-os:
 	@echo "--- Detected OS: $(DETECTED_OS) ---"
 
-train: $(VENV_DIR)/touchfile
+#train: $(VENV_DIR)/touchfile
+#	@echo "--- Starting training ---"
+#ifeq ($(DETECTED_OS),Windows)
+#	@powershell -Command "(Get-Content $(CONFIG_FILE)) -replace '^pretrained_model_name_or_path = .*', 'pretrained_model_name_or_path = \"$(BASE_MODEL)\"' | Set-Content $(CONFIG_FILE)"
+#else
+#	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(CONFIG_FILE)
+#endif
+#	@$(UV_EXE) run train_network.py --config_file=$(CONFIG_FILE)
+#	@echo "Training completed"
+
+train_lora:
 	@echo "--- Starting training ---"
 ifeq ($(DETECTED_OS),Windows)
-	@powershell -Command "(Get-Content $(CONFIG_FILE)) -replace '^pretrained_model_name_or_path = .*', 'pretrained_model_name_or_path = \"$(BASE_MODEL)\"' | Set-Content $(CONFIG_FILE)"
+	@powershell -Command "(Get-Content $(training_pars_lora.toml)) -replace '^pretrained_model_name_or_path = .*', 'pretrained_model_name_or_path = \"$(BASE_MODEL)\"| Set-Content $(CONFIG_FILE)"
 else
-	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(CONFIG_FILE)
+	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(training_pars_lora.toml)
 endif
-	@$(UV_EXE) run train_network.py --config_file=$(CONFIG_FILE)
-	@echo "✓ Training completed"
+	@$(UV_EXE) run train_network.py --config_file=$(training_pars_lora.toml)
+	@echo "Training completed"
+
+train_dora:
+	@echo "--- Starting training ---"
+ifeq ($(DETECTED_OS),Windows)
+	@powershell -Command "(Get-Content $(training_pars_dora.toml)) -replace '^pretrained_model_name_or_path = .*', 'pretrained_model_name_or_path = \"$(BASE_MODEL)\"| Set-Content $(CONFIG_FILE)"
+else
+	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(training_pars_dora.toml)
+endif
+	@$(UV_EXE) run train_network.py --config_file=$(training_pars_dora.toml)
+	@echo "Training completed"
 
 clean:
 	@echo "--- Cleaning project ---"
@@ -64,7 +84,7 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	@$(RMDIR) $(VENV_DIR) $(OUTPUT_DIR) 2>$(NULL_DEV) || true
 endif
-	@echo "✓ Cleanup complete"
+	@echo "Cleanup complete"
 
 # --- Support Targets ---
 install-uv:
@@ -91,7 +111,7 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	@$(TOUCH) $(VENV_DIR)/touchfile
 endif
-	@echo "✓ Virtual environment ready"
+	@echo "Virtual environment ready"
 
 check-dataset:
 	@echo "--- Checking dataset ---"
@@ -106,7 +126,7 @@ else
 		exit 1; \
 	fi
 endif
-	@echo "✓ Dataset verified"
+	@echo "Dataset verified"
 
 download-model:
 	@echo "--- Checking base model ---"
@@ -125,4 +145,4 @@ else
 		(echo "Error: Neither wget nor curl found for downloading model"; exit 1); \
 	fi
 endif
-	@echo "✓ Base model ready"
+	@echo "Base model ready"

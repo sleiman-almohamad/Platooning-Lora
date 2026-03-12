@@ -74,9 +74,7 @@ class TokenizeStrategy:
         raise NotImplementedError
 
     def tokenize_with_weights(self, text: Union[str, List[str]]) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
-        """
-        returns: [tokens1, tokens2, ...], [weights1, weights2, ...]
-        """
+        """returns: [tokens1, tokens2, ...], [weights1, weights2, ...]"""
         raise NotImplementedError
 
     def _get_weighted_input_ids(
@@ -87,8 +85,7 @@ class TokenizeStrategy:
         """
 
         def parse_prompt_attention(text):
-            """
-            Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
+            """Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
             Accepted tokens are:
             (abc) - increases attention to abc by a multiplier of 1.1
             (abc:3.12) - increases attention to abc by a multiplier of 3.12
@@ -118,8 +115,7 @@ class TokenizeStrategy:
             ['hill', 0.55],
             [', sun, ', 1.1],
             ['sky', 1.4641000000000006],
-            ['.', 1.1]]
-            """
+            ['.', 1.1]]"""
 
             res = []
             round_brackets = []
@@ -172,11 +168,9 @@ class TokenizeStrategy:
             return res
 
         def get_prompts_with_weights(text: str, max_length: int):
-            r"""
-            Tokenize a list of prompts and return its tokens with weights of each token. max_length does not include starting and ending token.
+            r"""Tokenize a list of prompts and return its tokens with weights of each token. max_length does not include starting and ending token.
 
-            No padding, starting or ending token is included.
-            """
+            No padding, starting or ending token is included."""
             truncated = False
 
             texts_and_weights = parse_prompt_attention(text)
@@ -221,10 +215,8 @@ class TokenizeStrategy:
     def _get_input_ids(
         self, tokenizer: CLIPTokenizer, text: str, max_length: Optional[int] = None, weighted: bool = False
     ) -> torch.Tensor:
-        """
-        for SD1.5/2.0/SDXL
-        TODO support batch input
-        """
+        """for SD1.5/2.0/SDXL
+        TODO support batch input"""
         if max_length is None:
             max_length = tokenizer.model_max_length - 2
 
@@ -238,8 +230,8 @@ class TokenizeStrategy:
             iids_list = []
             if tokenizer.pad_token_id == tokenizer.eos_token_id:
                 # v1
-                # 77以上の時は "<BOS> .... <EOS> <EOS> <EOS>" でトータル227とかになっているので、"<BOS>...<EOS>"の三連に変換する
-                # 1111氏のやつは , で区切る、とかしているようだが　とりあえず単純に
+                
+                
                 for i in range(1, max_length - tokenizer.model_max_length + 2, tokenizer.model_max_length - 2):  # (1, 152, 75)
                     ids_chunk = (
                         input_ids[0].unsqueeze(0),
@@ -250,7 +242,7 @@ class TokenizeStrategy:
                     iids_list.append(ids_chunk)
             else:
                 # v2 or SDXL
-                # 77以上の時は "<BOS> .... <EOS> <PAD> <PAD>..." でトータル227とかになっているので、"<BOS>...<EOS> <PAD> <PAD> ..."の三連に変換する
+                
                 for i in range(1, max_length - tokenizer.model_max_length + 2, tokenizer.model_max_length - 2):
                     ids_chunk = (
                         input_ids[0].unsqueeze(0),  # BOS
@@ -259,11 +251,11 @@ class TokenizeStrategy:
                     )  # PAD or EOS
                     ids_chunk = torch.cat(ids_chunk)
 
-                    # 末尾が <EOS> <PAD> または <PAD> <PAD> の場合は、何もしなくてよい
-                    # 末尾が x <PAD/EOS> の場合は末尾を <EOS> に変える（x <EOS> なら結果的に変化なし）
+                    
+                    
                     if ids_chunk[-2] != tokenizer.eos_token_id and ids_chunk[-2] != tokenizer.pad_token_id:
                         ids_chunk[-1] = tokenizer.eos_token_id
-                    # 先頭が <BOS> <PAD> ... の場合は <BOS> <EOS> <PAD> ... に変える
+                    
                     if ids_chunk[1] == tokenizer.pad_token_id:
                         ids_chunk[1] = tokenizer.eos_token_id
 
@@ -300,22 +292,18 @@ class TextEncodingStrategy:
     def encode_tokens(
         self, tokenize_strategy: TokenizeStrategy, models: List[Any], tokens: List[torch.Tensor]
     ) -> List[torch.Tensor]:
-        """
-        Encode tokens into embeddings and outputs.
+        """Encode tokens into embeddings and outputs.
         :param tokens: list of token tensors for each TextModel
-        :return: list of output embeddings for each architecture
-        """
+        :return: list of output embeddings for each architecture"""
         raise NotImplementedError
 
     def encode_tokens_with_weights(
         self, tokenize_strategy: TokenizeStrategy, models: List[Any], tokens: List[torch.Tensor], weights: List[torch.Tensor]
     ) -> List[torch.Tensor]:
-        """
-        Encode tokens into embeddings and outputs.
+        """Encode tokens into embeddings and outputs.
         :param tokens: list of token tensors for each TextModel
         :param weights: list of weight tensors for each TextModel
-        :return: list of output embeddings for each architecture
-        """
+        :return: list of output embeddings for each architecture"""
         raise NotImplementedError
 
 
@@ -471,9 +459,7 @@ class LatentsCachingStrategy:
         random_crop: bool,
         multi_resolution: bool = False,
     ):
-        """
-        Default implementation for cache_batch_latents. Image loading, VAE, flipping, alpha mask handling are common.
-        """
+        """Default implementation for cache_batch_latents. Image loading, VAE, flipping, alpha mask handling are common."""
         from library import train_util  # import here to avoid circular import
 
         img_tensor, alpha_masks, original_sizes, crop_ltrbs = train_util.load_images_and_masks_for_caching(
@@ -517,9 +503,7 @@ class LatentsCachingStrategy:
     def load_latents_from_disk(
         self, npz_path: str, bucket_reso: Tuple[int, int]
     ) -> Tuple[Optional[np.ndarray], Optional[List[int]], Optional[List[int]], Optional[np.ndarray], Optional[np.ndarray]]:
-        """
-        for SD/SDXL
-        """
+        """for SD/SDXL"""
         return self._default_load_latents_from_disk(None, npz_path, bucket_reso)
 
     def _default_load_latents_from_disk(

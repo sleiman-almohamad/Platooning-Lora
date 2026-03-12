@@ -37,9 +37,7 @@ def clean_memory():
 
 
 def clean_memory_on_device(device: torch.device):
-    r"""
-    Clean memory on the specified device, will be called from training scripts.
-    """
+    r"""Clean memory on the specified device, will be called from training scripts."""
     gc.collect()
 
     # device may "cuda" or "cuda:0", so we need to check the type of device
@@ -69,13 +67,11 @@ def get_preferred_device() -> torch.device:
 
 
 def init_ipex():
-    """
-    Apply IPEX to CUDA hijacks using `library.ipex.ipex_init`.
+    """Apply IPEX to CUDA hijacks using `library.ipex.ipex_init`.
 
     This function should run right after importing torch and before doing anything else.
 
-    If xpu is not available, this function does nothing.
-    """
+    If xpu is not available, this function does nothing."""
     try:
         if HAS_XPU:
             from library.ipex import ipex_init

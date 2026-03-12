@@ -6,13 +6,11 @@ from transformers import Adafactor
 # The implementation was provided by 2kpr. Thank you very much!
 
 def copy_stochastic_(target: torch.Tensor, source: torch.Tensor):
-    """
-    copies source into target using stochastic rounding
+    """copies source into target using stochastic rounding
 
     Args:
         target: the target tensor with dtype=bfloat16
-        source: the target tensor with dtype=float32
-    """
+        source: the target tensor with dtype=float32"""
     # create a random 16 bit integer
     result = torch.randint_like(source, dtype=torch.int32, low=0, high=(1 << 16))
 
@@ -115,13 +113,11 @@ def adafactor_step_param(self, p, group):
 
 @torch.no_grad()
 def adafactor_step(self, closure=None):
-    """
-    Performs a single optimization step
+    """Performs a single optimization step
 
     Arguments:
         closure (callable, optional): A closure that reevaluates the model
-            and returns the loss.
-    """
+            and returns the loss."""
     loss = None
     if closure is not None:
         loss = closure()

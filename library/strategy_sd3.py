@@ -57,10 +57,8 @@ class Sd3TextEncodingStrategy(TextEncodingStrategy):
         g_dropout_rate: float = 0.0,
         t5_dropout_rate: float = 0.0,
     ) -> None:
-        """
-        Args:
-            apply_t5_attn_mask: Default value for apply_t5_attn_mask.
-        """
+        """Args:
+            apply_t5_attn_mask: Default value for apply_t5_attn_mask."""
         self.apply_lg_attn_mask = apply_lg_attn_mask
         self.apply_t5_attn_mask = apply_t5_attn_mask
         self.l_dropout_rate = l_dropout_rate

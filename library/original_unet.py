@@ -1,27 +1,13 @@
-# Diffusers 0.10.2からStable Diffusionに必要な部分だけを持ってくる
-# 条件分岐等で不要な部分は削除している
-# コードの多くはDiffusersからコピーしている
-# 制約として、モデルのstate_dictがDiffusers 0.10.2のものと同じ形式である必要がある
+
+
+
+
 
 # Copy from Diffusers 0.10.2 for Stable Diffusion. Most of the code is copied from Diffusers.
 # Unnecessary parts are deleted by condition branching.
 # As a constraint, the state_dict of the model must be in the same format as that of Diffusers 0.10.2
 
-"""
-v1.5とv2.1の相違点は
-- attention_head_dimがintかlist[int]か
-- cross_attention_dimが768か1024か
-- use_linear_projection: trueがない（=False, 1.5）かあるか
-- upcast_attentionがFalse(1.5)かTrue(2.1)か
-- （以下は多分無視していい）
-- sample_sizeが64か96か
-- dual_cross_attentionがあるかないか
-- num_class_embedsがあるかないか
-- only_cross_attentionがあるかないか
-
-v1.5
-{
-  "_class_name": "UNet2DConditionModel",
+""""UNet2DConditionModel",
   "_diffusers_version": "0.6.0",
   "act_fn": "silu",
   "attention_head_dim": 8,
@@ -103,8 +89,7 @@ v2.1
   ],
   "use_linear_projection": true,
   "upcast_attention": true
-}
-"""
+}"""
 
 import math
 from types import SimpleNamespace
@@ -137,7 +122,7 @@ UP_BLOCK_TYPES = ["UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D", "Cros
 
 # region memory efficient attention
 
-# FlashAttentionを使うCrossAttention
+
 # based on https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/memory_efficient_attention_pytorch/flash_attention.py
 # LICENSE MIT https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/LICENSE
 
@@ -332,14 +317,12 @@ def get_timestep_embedding(
     scale: float = 1,
     max_period: int = 10000,
 ):
-    """
-    This matches the implementation in Denoising Diffusion Probabilistic Models: Create sinusoidal timestep embeddings.
+    """This matches the implementation in Denoising Diffusion Probabilistic Models: Create sinusoidal timestep embeddings.
 
     :param timesteps: a 1-D Tensor of N indices, one per batch element.
                       These may be fractional.
     :param embedding_dim: the dimension of the output. :param max_period: controls the minimum frequency of the
-    embeddings. :return: an [N x dim] Tensor of positional embeddings.
-    """
+    embeddings. :return: an [N x dim] Tensor of positional embeddings."""
     assert len(timesteps.shape) == 1, "Timesteps should be a 1d-array"
 
     half_dim = embedding_dim // 2
@@ -700,7 +683,7 @@ class CrossAttention(nn.Module):
         q = q.contiguous()
         k = k.contiguous()
         v = v.contiguous()
-        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)  # 最適なのを選んでくれる
+        out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)  
 
         out = rearrange(out, "b n h d -> b n (h d)", h=h)
 
@@ -766,13 +749,11 @@ def translate_attention_names_from_diffusers(
 
 # feedforward
 class GEGLU(nn.Module):
-    r"""
-    A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
+    r"""A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
 
     Parameters:
         dim_in (`int`): The number of channels in the input.
-        dim_out (`int`): The number of channels in the output.
-    """
+        dim_out (`int`): The number of channels in the output."""
 
     def __init__(self, dim_in: int, dim_out: int):
         super().__init__()
@@ -1388,14 +1369,14 @@ class UNet2DConditionModel(nn.Module):
             f"UNet2DConditionModel: {sample_size}, {attention_head_dim}, {cross_attention_dim}, {use_linear_projection}, {upcast_attention}"
         )
 
-        # 外部からの参照用に定義しておく
+        
         self.in_channels = IN_CHANNELS
         self.out_channels = OUT_CHANNELS
 
         self.sample_size = sample_size
         self.prepare_config(sample_size=sample_size)
 
-        # state_dictの書式が変わるのでmoduleの持ち方は変えられない
+        
 
         # input
         self.conv_in = nn.Conv2d(IN_CHANNELS, BLOCK_OUT_CHANNELS[0], kernel_size=3, padding=(1, 1))
@@ -1533,8 +1514,7 @@ class UNet2DConditionModel(nn.Module):
         down_block_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
         mid_block_additional_residual: Optional[torch.Tensor] = None,
     ) -> Union[Dict, Tuple]:
-        r"""
-        Args:
+        r"""Args:
             sample (`torch.FloatTensor`): (batch, channel, height, width) noisy inputs tensor
             timestep (`torch.FloatTensor` or `float` or `int`): (batch) timesteps
             encoder_hidden_states (`torch.FloatTensor`): (batch, sequence_length, feature_dim) encoder hidden states
@@ -1543,19 +1523,18 @@ class UNet2DConditionModel(nn.Module):
 
         Returns:
             `SampleOutput` or `tuple`:
-            `SampleOutput` if `return_dict` is True, otherwise a `tuple`. When returning a tuple, the first element is the sample tensor.
-        """
+            `SampleOutput` if `return_dict` is True, otherwise a `tuple`. When returning a tuple, the first element is the sample tensor."""
         # By default samples have to be AT least a multiple of the overall upsampling factor.
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layears).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        # デフォルトではサンプルは「2^アップサンプルの数」、つまり64の倍数である必要がある
-        # ただそれ以外のサイズにも対応できるように、必要ならアップサンプルのサイズを変更する
-        # 多分画質が悪くなるので、64で割り切れるようにしておくのが良い
+        
+        
+        
         default_overall_up_factor = 2**self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        # 64で割り切れないときはupsamplerにサイズを伝える
+        
         forward_upsample_size = False
         upsample_size = None
 
@@ -1565,16 +1544,16 @@ class UNet2DConditionModel(nn.Module):
 
         # 1. time
         timesteps = timestep
-        timesteps = self.handle_unusual_timesteps(sample, timesteps)  # 変な時だけ処理
+        timesteps = self.handle_unusual_timesteps(sample, timesteps)  
 
         t_emb = self.time_proj(timesteps)
 
         # timesteps does not contain any weights and will always return f32 tensors
         # but time_embedding might actually be running in fp16. so we need to cast here.
         # there might be better ways to encapsulate this.
-        # timestepsは重みを含まないので常にfloat32のテンソルを返す
-        # しかしtime_embeddingはfp16で動いているかもしれないので、ここでキャストする必要がある
-        # time_projでキャストしておけばいいんじゃね？
+        
+        
+        
         t_emb = t_emb.to(dtype=self.dtype)
         emb = self.time_embedding(t_emb)
 
@@ -1583,8 +1562,8 @@ class UNet2DConditionModel(nn.Module):
 
         down_block_res_samples = (sample,)
         for downsample_block in self.down_blocks:
-            # downblockはforwardで必ずencoder_hidden_statesを受け取るようにしても良さそうだけど、
-            # まあこちらのほうがわかりやすいかもしれない
+            
+            
             if downsample_block.has_cross_attention:
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
@@ -1596,7 +1575,7 @@ class UNet2DConditionModel(nn.Module):
 
             down_block_res_samples += res_samples
 
-        # skip connectionにControlNetの出力を追加する
+        
         if down_block_additional_residuals is not None:
             down_block_res_samples = list(down_block_res_samples)
             for i in range(len(down_block_res_samples)):
@@ -1606,7 +1585,7 @@ class UNet2DConditionModel(nn.Module):
         # 4. mid
         sample = self.mid_block(sample, emb, encoder_hidden_states=encoder_hidden_states)
 
-        # ControlNetの出力を追加する
+        
         if mid_block_additional_residual is not None:
             sample += mid_block_additional_residual
 
@@ -1618,7 +1597,7 @@ class UNet2DConditionModel(nn.Module):
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]  # skip connection
 
             # if we have not reached the final block and need to forward the upsample size, we do it here
-            # 前述のように最後のブロック以外ではupsample_sizeを伝える
+            
             if not is_final_block and forward_upsample_size:
                 upsample_size = down_block_res_samples[-1].shape[2:]
 
@@ -1646,9 +1625,7 @@ class UNet2DConditionModel(nn.Module):
         return SampleOutput(sample=sample)
 
     def handle_unusual_timesteps(self, sample, timesteps):
-        r"""
-        timestampsがTensorでない場合、Tensorに変換する。またOnnx/Core MLと互換性のあるようにbatchサイズまでbroadcastする。
-        """
+        r"""timestampsTensorTensorOnnx/Core MLbatchbroadcast"""
         if not torch.is_tensor(timesteps):
             # TODO: this requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
             # This would be a good case for the `match` statement (Python 3.10+)
@@ -1790,8 +1767,7 @@ class InferUNet2DConditionModel:
         current implementation is a copy of `UNet2DConditionModel.forward()` with Deep Shrink.
         """
 
-        r"""
-        Args:
+        r"""Args:
             sample (`torch.FloatTensor`): (batch, channel, height, width) noisy inputs tensor
             timestep (`torch.FloatTensor` or `float` or `int`): (batch) timesteps
             encoder_hidden_states (`torch.FloatTensor`): (batch, sequence_length, feature_dim) encoder hidden states
@@ -1800,8 +1776,7 @@ class InferUNet2DConditionModel:
 
         Returns:
             `SampleOutput` or `tuple`:
-            `SampleOutput` if `return_dict` is True, otherwise a `tuple`. When returning a tuple, the first element is the sample tensor.
-        """
+            `SampleOutput` if `return_dict` is True, otherwise a `tuple`. When returning a tuple, the first element is the sample tensor."""
 
         _self = self.delegate
 
@@ -1809,13 +1784,13 @@ class InferUNet2DConditionModel:
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layears).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        # デフォルトではサンプルは「2^アップサンプルの数」、つまり64の倍数である必要がある
-        # ただそれ以外のサイズにも対応できるように、必要ならアップサンプルのサイズを変更する
-        # 多分画質が悪くなるので、64で割り切れるようにしておくのが良い
+        
+        
+        
         default_overall_up_factor = 2**_self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        # 64で割り切れないときはupsamplerにサイズを伝える
+        
         forward_upsample_size = False
         upsample_size = None
 
@@ -1825,16 +1800,16 @@ class InferUNet2DConditionModel:
 
         # 1. time
         timesteps = timestep
-        timesteps = _self.handle_unusual_timesteps(sample, timesteps)  # 変な時だけ処理
+        timesteps = _self.handle_unusual_timesteps(sample, timesteps)  
 
         t_emb = _self.time_proj(timesteps)
 
         # timesteps does not contain any weights and will always return f32 tensors
         # but time_embedding might actually be running in fp16. so we need to cast here.
         # there might be better ways to encapsulate this.
-        # timestepsは重みを含まないので常にfloat32のテンソルを返す
-        # しかしtime_embeddingはfp16で動いているかもしれないので、ここでキャストする必要がある
-        # time_projでキャストしておけばいいんじゃね？
+        
+        
+        
         t_emb = t_emb.to(dtype=_self.dtype)
         emb = _self.time_embedding(t_emb)
 
@@ -1856,8 +1831,8 @@ class InferUNet2DConditionModel:
                         sample = sample.to(torch.float32)
                     sample = F.interpolate(sample, scale_factor=self.ds_ratio, mode="bicubic", align_corners=False).to(org_dtype)
 
-            # downblockはforwardで必ずencoder_hidden_statesを受け取るようにしても良さそうだけど、
-            # まあこちらのほうがわかりやすいかもしれない
+            
+            
             if downsample_block.has_cross_attention:
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
@@ -1869,7 +1844,7 @@ class InferUNet2DConditionModel:
 
             down_block_res_samples += res_samples
 
-        # skip connectionにControlNetの出力を追加する
+        
         if down_block_additional_residuals is not None:
             down_block_res_samples = list(down_block_res_samples)
             for i in range(len(down_block_res_samples)):
@@ -1879,7 +1854,7 @@ class InferUNet2DConditionModel:
         # 4. mid
         sample = _self.mid_block(sample, emb, encoder_hidden_states=encoder_hidden_states)
 
-        # ControlNetの出力を追加する
+        
         if mid_block_additional_residual is not None:
             sample += mid_block_additional_residual
 
@@ -1891,7 +1866,7 @@ class InferUNet2DConditionModel:
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]  # skip connection
 
             # if we have not reached the final block and need to forward the upsample size, we do it here
-            # 前述のように最後のブロック以外ではupsample_sizeを伝える
+            
             if not is_final_block and forward_upsample_size:
                 upsample_size = down_block_res_samples[-1].shape[2:]
 

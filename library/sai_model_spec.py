@@ -12,8 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-r"""
-# Metadata Example
+r"""# Metadata Example
 metadata = {
     # === Must ===
     "modelspec.sai_model_spec": "1.0.0", # Required version ID for the spec
@@ -27,8 +26,7 @@ metadata = {
     # === Can ===
     "modelspec.license": "ExampleLicense-1.0", # eg CreativeML Open RAIL, etc.
     "modelspec.usage_hint": "Use keyword 'example'" # In your own language, very short hints about how the user should use the model
-}
-"""
+}"""
 
 BASE_METADATA = {
     # === Must ===
@@ -50,7 +48,7 @@ BASE_METADATA = {
     "modelspec.encoder_layer": None,
 }
 
-# 別に使うやつだけ定義
+
 MODELSPEC_TITLE = "modelspec.title"
 
 ARCH_SD_V1 = "stable-diffusion-v1"
@@ -124,15 +122,13 @@ def build_metadata(
     sd3: Optional[str] = None,
     flux: Optional[str] = None,
 ):
-    """
-    sd3: only supports "m", flux: only supports "dev"
-    """
+    """sd3: only supports "m", flux: only supports "dev" """
     # if state_dict is None, hash is not calculated
 
     metadata = {}
     metadata.update(BASE_METADATA)
 
-    # TODO メモリを消費せずかつ正しいハッシュ計算の方法がわかったら実装する
+    
     # if state_dict is not None:
     # hash = precalculate_safetensors_hashes(state_dict)
     # metadata["modelspec.hash_sha256"] = hash
@@ -292,14 +288,13 @@ def build_merged_from(models: List[str]) -> str:
         return title
 
     titles = [get_title(model) for model in models]
-    return ", ".join(titles)
+    return ",".join(titles)
 
 
 # endregion
 
 
-r"""
-if __name__ == "__main__":
+r"""if __name__ == "__main__":
     import argparse
     import torch
     from safetensors.torch import load_file
@@ -329,6 +324,4 @@ if __name__ == "__main__":
         # ===== Update the hash for modelspec =====
         by_ref = f"0x{file_hash.hexdigest()}"
     print(by_ref)
-    print("is same?", by_ref == metadata["modelspec.hash_sha256"])
-
-"""
+    print("is same?", by_ref == metadata["modelspec.hash_sha256"])"""

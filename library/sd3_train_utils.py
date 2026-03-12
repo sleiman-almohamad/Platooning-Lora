@@ -105,8 +105,8 @@ def save_sd3_model_on_train_end(
     train_util.save_sd_model_on_train_end_common(args, True, True, epoch, global_step, sd_saver, None)
 
 
-# epochとstepの保存、メタデータにepoch/stepが含まれ引数が同じになるため、統合している
-# on_epoch_end: Trueならepoch終了時、Falseならstep経過時
+
+# on_epoch_end
 def save_sd3_model_on_epoch_end_or_stepwise(
     args: argparse.Namespace,
     on_epoch_end: bool,
@@ -146,90 +146,90 @@ def add_sd3_training_arguments(parser: argparse.ArgumentParser):
         "--clip_l",
         type=str,
         required=False,
-        help="CLIP-L model path. if not specified, use ckpt's state_dict / CLIP-Lモデルのパス。指定しない場合はckptのstate_dictを使用",
+        help="CLIP-L model path. if not specified, use ckpt's state_dict",
     )
     parser.add_argument(
         "--clip_g",
         type=str,
         required=False,
-        help="CLIP-G model path. if not specified, use ckpt's state_dict / CLIP-Gモデルのパス。指定しない場合はckptのstate_dictを使用",
+        help="CLIP-G model path. if not specified, use ckpt's state_dict",
     )
     parser.add_argument(
         "--t5xxl",
         type=str,
         required=False,
-        help="T5-XXL model path. if not specified, use ckpt's state_dict / T5-XXLモデルのパス。指定しない場合はckptのstate_dictを使用",
+        help="T5-XXL model path. if not specified, use ckpt's state_dict",
     )
     parser.add_argument(
         "--save_clip",
         action="store_true",
-        help="[DOES NOT WORK] unified checkpoint is not supported / 統合チェックポイントはまだサポートされていません",
+        help="[DOES NOT WORK] unified checkpoint is not supported",
     )
     parser.add_argument(
         "--save_t5xxl",
         action="store_true",
-        help="[DOES NOT WORK] unified checkpoint is not supported / 統合チェックポイントはまだサポートされていません",
+        help="[DOES NOT WORK] unified checkpoint is not supported",
     )
 
     parser.add_argument(
         "--t5xxl_device",
         type=str,
         default=None,
-        help="[DOES NOT WORK] not supported yet. T5-XXL device. if not specified, use accelerator's device / T5-XXLデバイス。指定しない場合はacceleratorのデバイスを使用",
+        help="[DOES NOT WORK] not supported yet. T5-XXL device. if not specified, use accelerator's device",
     )
     parser.add_argument(
         "--t5xxl_dtype",
         type=str,
         default=None,
-        help="[DOES NOT WORK] not supported yet. T5-XXL dtype. if not specified, use default dtype (from mixed precision) / T5-XXL dtype。指定しない場合はデフォルトのdtype（mixed precisionから）を使用",
+        help="[DOES NOT WORK] not supported yet. T5-XXL dtype. if not specified, use default dtype (from mixed precision)",
     )
 
     parser.add_argument(
         "--t5xxl_max_token_length",
         type=int,
         default=256,
-        help="maximum token length for T5-XXL. 256 is the default value / T5-XXLの最大トークン長。デフォルトは256",
+        help="maximum token length for T5-XXL. 256 is the default value",
     )
     parser.add_argument(
         "--apply_lg_attn_mask",
         action="store_true",
-        help="apply attention mask (zero embs) to CLIP-L and G / CLIP-LとGにアテンションマスク（ゼロ埋め）を適用する",
+        help="apply attention mask (zero embs) to CLIP-L and G",
     )
     parser.add_argument(
         "--apply_t5_attn_mask",
         action="store_true",
-        help="apply attention mask (zero embs) to T5-XXL / T5-XXLにアテンションマスク（ゼロ埋め）を適用する",
+        help="apply attention mask (zero embs) to T5-XXL",
     )
     parser.add_argument(
         "--clip_l_dropout_rate",
         type=float,
         default=0.0,
-        help="Dropout rate for CLIP-L encoder, default is 0.0 / CLIP-Lエンコーダのドロップアウト率、デフォルトは0.0",
+        help="Dropout rate for CLIP-L encoder, default is 0.0",
     )
     parser.add_argument(
         "--clip_g_dropout_rate",
         type=float,
         default=0.0,
-        help="Dropout rate for CLIP-G encoder, default is 0.0 / CLIP-Gエンコーダのドロップアウト率、デフォルトは0.0",
+        help="Dropout rate for CLIP-G encoder, default is 0.0",
     )
     parser.add_argument(
         "--t5_dropout_rate",
         type=float,
         default=0.0,
-        help="Dropout rate for T5 encoder, default is 0.0 / T5エンコーダのドロップアウト率、デフォルトは0.0",
+        help="Dropout rate for T5 encoder, default is 0.0",
     )
     parser.add_argument(
         "--pos_emb_random_crop_rate",
         type=float,
         default=0.0,
         help="Random crop rate for positional embeddings, default is 0.0. Only for SD3.5M"
-        " / 位置埋め込みのランダムクロップ率、デフォルトは0.0。SD3.5M以外では予期しない動作になります",
+        "",
     )
     parser.add_argument(
         "--enable_scaled_pos_embed",
         action="store_true",
         help="Scale position embeddings for each resolution during multi-resolution training. Only for SD3.5M"
-        " / 複数解像度学習時に解像度ごとに位置埋め込みをスケーリングする。SD3.5M以外では予期しない動作になります",
+        "",
     )
 
     # Dependencies of Diffusers noise sampler has been removed for clarity in training
@@ -238,41 +238,41 @@ def add_sd3_training_arguments(parser: argparse.ArgumentParser):
         "--training_shift",
         type=float,
         default=1.0,
-        help="Discrete flow shift for training timestep distribution adjustment, applied in addition to the weighting scheme, default is 1.0. /タイムステップ分布のための離散フローシフト、重み付けスキームの上に適用される、デフォルトは1.0。",
+        help="Discrete flow shift for training timestep distribution adjustment, applied in addition to the weighting scheme, default is 1.0.",
     )
 
 
 def verify_sdxl_training_args(args: argparse.Namespace, supportTextEncoderCaching: bool = True):
-    assert not args.v2, "v2 cannot be enabled in SDXL training / SDXL学習ではv2を有効にすることはできません"
+    assert not args.v2, "v2 cannot be enabled in SDXL training"
     if args.v_parameterization:
-        logger.warning("v_parameterization will be unexpected / SDXL学習ではv_parameterizationは想定外の動作になります")
+        logger.warning("v_parameterization will be unexpected")
 
     if args.clip_skip is not None:
-        logger.warning("clip_skip will be unexpected / SDXL学習ではclip_skipは動作しません")
+        logger.warning("clip_skip will be unexpected")
 
     # if args.multires_noise_iterations:
     #     logger.info(
-    #         f"Warning: SDXL has been trained with noise_offset={DEFAULT_NOISE_OFFSET}, but noise_offset is disabled due to multires_noise_iterations / SDXLはnoise_offset={DEFAULT_NOISE_OFFSET}で学習されていますが、multires_noise_iterationsが有効になっているためnoise_offsetは無効になります"
+    #         f"Warning: SDXL has been trained with noise_offset={DEFAULT_NOISE_OFFSET}, but noise_offset is disabled due to multires_noise_iterations
     #     )
     # else:
     #     if args.noise_offset is None:
     #         args.noise_offset = DEFAULT_NOISE_OFFSET
     #     elif args.noise_offset != DEFAULT_NOISE_OFFSET:
     #         logger.info(
-    #             f"Warning: SDXL has been trained with noise_offset={DEFAULT_NOISE_OFFSET} / SDXLはnoise_offset={DEFAULT_NOISE_OFFSET}で学習されています"
+    #             f"Warning: SDXL has been trained with noise_offset={DEFAULT_NOISE_OFFSET}
     #         )
-    #     logger.info(f"noise_offset is set to {args.noise_offset} / noise_offsetが{args.noise_offset}に設定されました")
+    #     logger.info(f"noise_offset is set to {args.noise_offset}
 
     assert (
         not hasattr(args, "weighted_captions") or not args.weighted_captions
-    ), "weighted_captions cannot be enabled in SDXL training currently / SDXL学習では今のところweighted_captionsを有効にすることはできません"
+    ), "weighted_captions cannot be enabled in SDXL training currently"
 
     if supportTextEncoderCaching:
         if args.cache_text_encoder_outputs_to_disk and not args.cache_text_encoder_outputs:
             args.cache_text_encoder_outputs = True
             logger.warning(
-                "cache_text_encoder_outputs is enabled because cache_text_encoder_outputs_to_disk is enabled / "
-                + "cache_text_encoder_outputs_to_diskが有効になっているためcache_text_encoder_outputsが有効になりました"
+                "cache_text_encoder_outputs is enabled because cache_text_encoder_outputs_to_disk is enabled /"
+                + "cache_text_encoder_outputs_to_diskcache_text_encoder_outputs"
             )
 
 
@@ -389,7 +389,7 @@ def sample_images(
         if args.sample_every_n_steps is None and args.sample_every_n_epochs is None:
             return
         if args.sample_every_n_epochs is not None:
-            # sample_every_n_steps は無視する
+            
             if epoch is None or epoch % args.sample_every_n_epochs != 0:
                 return
         else:
@@ -397,9 +397,9 @@ def sample_images(
                 return
 
     logger.info("")
-    logger.info(f"generating sample images at step / サンプル画像生成 ステップ: {steps}")
+    logger.info(f"generating sample images at step")
     if not os.path.isfile(args.sample_prompts) and sample_prompts_te_outputs is None:
-        logger.error(f"No prompt file / プロンプトファイルがありません: {args.sample_prompts}")
+        logger.error(f"No prompt file")
         return
 
     distributed_state = PartialState()  # for multi gpu distributed inference. this is a singleton, so it's safe to use it here
@@ -612,21 +612,18 @@ from diffusers.utils import BaseOutput
 
 @dataclass
 class FlowMatchEulerDiscreteSchedulerOutput(BaseOutput):
-    """
-    Output class for the scheduler's `step` function output.
+    """Output class for the scheduler's `step` function output.
 
     Args:
         prev_sample (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)` for images):
             Computed sample `(x_{t-1})` of previous timestep. `prev_sample` should be used as next model input in the
-            denoising loop.
-    """
+            denoising loop."""
 
     prev_sample: torch.FloatTensor
 
 
 class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
-    """
-    Euler scheduler.
+    """Euler scheduler.
 
     This model inherits from [`SchedulerMixin`] and [`ConfigMixin`]. Check the superclass documentation for the generic
     methods the library implements for all schedulers such as loading and saving.
@@ -638,8 +635,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and
             Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.
         shift (`float`, defaults to 1.0):
-            The shift value for the timestep schedule.
-    """
+            The shift value for the timestep schedule."""
 
     _compatibles = []
     order = 1
@@ -696,8 +692,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         timestep: Union[float, torch.FloatTensor],
         noise: Optional[torch.FloatTensor] = None,
     ) -> torch.FloatTensor:
-        """
-        Forward process in flow-matching
+        """Forward process in flow-matching
 
         Args:
             sample (`torch.FloatTensor`):
@@ -707,8 +702,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
 
         Returns:
             `torch.FloatTensor`:
-                A scaled input sample.
-        """
+                A scaled input sample."""
         if self.step_index is None:
             self._init_step_index(timestep)
 
@@ -721,15 +715,13 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         return sigma * self.config.num_train_timesteps
 
     def set_timesteps(self, num_inference_steps: int, device: Union[str, torch.device] = None):
-        """
-        Sets the discrete timesteps used for the diffusion chain (to be run before inference).
+        """Sets the discrete timesteps used for the diffusion chain (to be run before inference).
 
         Args:
             num_inference_steps (`int`):
                 The number of diffusion steps used when generating samples with a pre-trained model.
             device (`str` or `torch.device`, *optional*):
-                The device to which the timesteps should be moved to. If `None`, the timesteps are not moved.
-        """
+                The device to which the timesteps should be moved to. If `None`, the timesteps are not moved."""
         self.num_inference_steps = num_inference_steps
 
         timesteps = np.linspace(self._sigma_to_t(self.sigma_max), self._sigma_to_t(self.sigma_min), num_inference_steps)
@@ -779,8 +771,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         generator: Optional[torch.Generator] = None,
         return_dict: bool = True,
     ) -> Union[FlowMatchEulerDiscreteSchedulerOutput, Tuple]:
-        """
-        Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
+        """Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
         process from the learned model outputs (most often the predicted noise).
 
         Args:
@@ -804,8 +795,7 @@ class FlowMatchEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         Returns:
             [`~schedulers.scheduling_euler_discrete.EulerDiscreteSchedulerOutput`] or `tuple`:
                 If return_dict is `True`, [`~schedulers.scheduling_euler_discrete.EulerDiscreteSchedulerOutput`] is
-                returned, otherwise a tuple is returned where the first element is the sample tensor.
-        """
+                returned, otherwise a tuple is returned where the first element is the sample tensor."""
 
         if isinstance(timestep, int) or isinstance(timestep, torch.IntTensor) or isinstance(timestep, torch.LongTensor):
             raise ValueError(
@@ -881,8 +871,7 @@ def compute_density_for_timestep_sampling(
 
     Courtesy: This was contributed by Rafie Walker in https://github.com/huggingface/diffusers/pull/8528.
 
-    SD3 paper reference: https://arxiv.org/abs/2403.03206v1.
-    """
+    SD3 paper reference: https://arxiv.org/abs/2403.03206v1."""
     if weighting_scheme == "logit_normal":
         # See 3.1 in the SD3 paper ($rf/lognorm(0.00,1.00)$).
         u = torch.normal(mean=logit_mean, std=logit_std, size=(batch_size,), device="cpu")
@@ -900,8 +889,7 @@ def compute_loss_weighting_for_sd3(weighting_scheme: str, sigmas=None):
 
     Courtesy: This was contributed by Rafie Walker in https://github.com/huggingface/diffusers/pull/8528.
 
-    SD3 paper reference: https://arxiv.org/abs/2403.03206v1.
-    """
+    SD3 paper reference: https://arxiv.org/abs/2403.03206v1."""
     if weighting_scheme == "sigma_sqrt":
         weighting = (sigmas**-2.0).float()
     elif weighting_scheme == "cosmap":

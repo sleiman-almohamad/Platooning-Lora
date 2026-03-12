@@ -1,13 +1,13 @@
 # Modified from Diffusers to reduce VRAM usage
 
 # Copyright 2022 The HuggingFace Team. All rights reserved.
-#
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 def slice_h(x, num_slices):
     # slice with pad 1 both sides: to eliminate side effect of padding of conv2d
-    # Conv2dのpaddingの副作用を排除するために、両側にpad 1しながらHをスライスする
-    # NCHWでもNHWCでもどちらでも動く
+    
+    
     size = (x.shape[2] + num_slices - 1) // num_slices
     sliced = []
     for i in range(num_slices):
@@ -42,7 +42,7 @@ def slice_h(x, num_slices):
             sliced.append(x[:, :, : size + 1, :])
         else:
             end = size * (i + 1) + 1
-            if x.shape[2] - end < 3:  # if the last slice is too small, use the rest of the tensor 最後が細すぎるとconv2dできないので全部使う
+            if x.shape[2] - end < 3:  # if the last slice is too small
                 end = x.shape[2]
             sliced.append(x[:, :, size * i - 1 : end, :])
             if end >= x.shape[2]:
@@ -51,7 +51,7 @@ def slice_h(x, num_slices):
 
 
 def cat_h(sliced):
-    # padding分を除いて結合する
+    
     cat = []
     for i, x in enumerate(sliced):
         if i == 0:
@@ -76,17 +76,17 @@ def resblock_forward(_self, num_slices, input_tensor, temb, **kwargs):
     _self.norm1.to(cpu_device)
     _self.norm2.to(cpu_device)
 
-    # GroupNormがCPUでfp16で動かない対策
+    
     org_dtype = input_tensor.dtype
     if org_dtype == torch.float16:
         _self.norm1.to(torch.float32)
         _self.norm2.to(torch.float32)
 
-    # すべてのテンソルをCPUに移動する
+    
     input_tensor = input_tensor.to(cpu_device)
     hidden_states = input_tensor
 
-    # どうもこれは結果が異なるようだ……
+    
     # def sliced_norm1(norm, x):
     #     num_div = 4 if up_block_idx <= 2 else x.shape[1] // norm.num_groups
     #     sliced_tensor = torch.chunk(x, num_div, dim=1)
@@ -101,7 +101,7 @@ def resblock_forward(_self, num_slices, input_tensor, temb, **kwargs):
     #     x = torch.cat(normed_tensor, dim=1)
     #     return num_div, x
 
-    # normを分割すると結果が変わるので、ここだけは分割しない。GPUで計算するとVRAMが足りなくなるので、CPUで計算する。幸いCPUでもそこまで遅くない
+    
     if org_dtype == torch.float16:
         hidden_states = hidden_states.to(torch.float32)
     hidden_states = _self.norm1(hidden_states)  # run on cpu
@@ -115,7 +115,7 @@ def resblock_forward(_self, num_slices, input_tensor, temb, **kwargs):
         x = sliced[i]
         sliced[i] = None
 
-        # 計算する部分だけGPUに移動する、以下同様
+        
         x = x.to(org_device)
         x = _self.nonlinearity(x)
         x = _self.conv1(x)
@@ -152,7 +152,7 @@ def resblock_forward(_self, num_slices, input_tensor, temb, **kwargs):
 
     # make shortcut
     if _self.conv_shortcut is not None:
-        sliced = list(torch.chunk(input_tensor, num_slices, dim=2))  # no padding in conv_shortcut パディングがないので普通にスライスする
+        sliced = list(torch.chunk(input_tensor, num_slices, dim=2))  
         del input_tensor
 
         for i in range(len(sliced)):
@@ -170,7 +170,7 @@ def resblock_forward(_self, num_slices, input_tensor, temb, **kwargs):
 
     output_tensor = (input_tensor + hidden_states) / _self.output_scale_factor
 
-    output_tensor = output_tensor.to(org_device)  # 次のレイヤーがGPUで計算する
+    output_tensor = output_tensor.to(org_device)  
     return output_tensor
 
 
@@ -228,7 +228,7 @@ class SlicingEncoder(nn.Module):
             resnet_groups=norm_num_groups,
             temb_channels=None,
         )
-        self.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)  # とりあえずDiffusersのxformersを使う
+        self.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)  
 
         # out
         self.conv_norm_out = nn.GroupNorm(num_channels=block_out_channels[-1], num_groups=norm_num_groups, eps=1e-6)
@@ -245,7 +245,7 @@ class SlicingEncoder(nn.Module):
             return forward
 
         self.num_slices = num_slices
-        div = num_slices / (2 ** (len(self.down_blocks) - 1))  # 深い層はそこまで分割しなくていいので適宜減らす
+        div = num_slices / (2 ** (len(self.down_blocks) - 1))  
         # logger.info(f"initial divisor: {div}")
         if div >= 2:
             div = int(div)
@@ -300,7 +300,7 @@ class SlicingEncoder(nn.Module):
         sample = self.mid_block(sample)
 
         # post-process
-        # ここも省メモリ化したいが、恐らくそこまでメモリを食わないので省略
+        
         sample = self.conv_norm_out(sample)
         sample = self.conv_act(sample)
         sample = self.conv_out(sample)
@@ -320,7 +320,7 @@ class SlicingEncoder(nn.Module):
         hidden_states = torch.nn.functional.pad(hidden_states, pad, mode="constant", value=0)
 
         # slice with even number because of stride 2
-        # strideが2なので偶数でスライスする
+        
         # slice with pad 1 both sides: to eliminate side effect of padding of conv2d
         size = (hidden_states.shape[2] + num_slices - 1) // num_slices
         size = size + 1 if size % 2 == 1 else size
@@ -346,7 +346,7 @@ class SlicingEncoder(nn.Module):
             x = _self.conv(x)
             x = x.to(cpu_device)
 
-            # ここだけ雰囲気が違うのはCopilotのせい
+            
             if i == 0:
                 hidden_states = x
             else:
@@ -388,7 +388,7 @@ class SlicingDecoder(nn.Module):
             resnet_groups=norm_num_groups,
             temb_channels=None,
         )
-        self.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)  # とりあえずDiffusersのxformersを使う
+        self.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)  
 
         # up
         reversed_block_out_channels = list(reversed(block_out_channels))
@@ -465,7 +465,7 @@ class SlicingDecoder(nn.Module):
         sample = self.conv_act(sample)
 
         # conv_out with slicing because of VRAM usage
-        # conv_outはとてもVRAM使うのでスライスして対応
+        
         org_device = sample.device
         cpu_device = torch.device("cpu")
         sample = sample.to(cpu_device)
@@ -507,7 +507,7 @@ class SlicingDecoder(nn.Module):
             # Cast to float32 to as 'upsample_nearest2d_out_frame' op does not support bfloat16
             # TODO(Suraj): Remove this cast once the issue is fixed in PyTorch
             # https://github.com/pytorch/pytorch/issues/86679
-            # PyTorch 2で直らないかね……
+            
             if org_dtype == torch.bfloat16:
                 x = x.to(torch.float32)
 
@@ -518,7 +518,7 @@ class SlicingDecoder(nn.Module):
 
             x = _self.conv(x)
 
-            # upsampleされてるのでpadは2になる
+            
             if i == 0:
                 x = x[:, :, :-2, :]
             elif i == num_slices - 1:
@@ -556,8 +556,7 @@ class SlicingAutoencoderKL(ModelMixin, ConfigMixin):
             obj:`(64,)`): Tuple of block output channels.
         act_fn (`str`, *optional*, defaults to `"silu"`): The activation function to use.
         latent_channels (`int`, *optional*, defaults to `4`): Number of channels in the latent space.
-        sample_size (`int`, *optional*, defaults to `32`): TODO
-    """
+        sample_size (`int`, *optional*, defaults to `32`): TODO"""
 
     @register_to_config
     def __init__(
@@ -624,21 +623,17 @@ class SlicingAutoencoderKL(ModelMixin, ConfigMixin):
 
         return DecoderOutput(sample=dec)
 
-    # これはバッチ方向のスライシング　紛らわしい
+    
     def enable_slicing(self):
-        r"""
-        Enable sliced VAE decoding.
+        r"""Enable sliced VAE decoding.
 
         When this option is enabled, the VAE will split the input tensor in slices to compute decoding in several
-        steps. This is useful to save some memory and allow larger batch sizes.
-        """
+        steps. This is useful to save some memory and allow larger batch sizes."""
         self.use_slicing = True
 
     def disable_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_slicing` was previously invoked, this method will go back to computing
-        decoding in one step.
-        """
+        r"""Disable sliced VAE decoding. If `enable_slicing` was previously invoked, this method will go back to computing
+        decoding in one step."""
         self.use_slicing = False
 
     def decode(self, z: torch.FloatTensor, return_dict: bool = True) -> Union[DecoderOutput, torch.FloatTensor]:
@@ -660,14 +655,12 @@ class SlicingAutoencoderKL(ModelMixin, ConfigMixin):
         return_dict: bool = True,
         generator: Optional[torch.Generator] = None,
     ) -> Union[DecoderOutput, torch.FloatTensor]:
-        r"""
-        Args:
+        r"""Args:
             sample (`torch.FloatTensor`): Input sample.
             sample_posterior (`bool`, *optional*, defaults to `False`):
                 Whether to sample from the posterior.
             return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`DecoderOutput`] instead of a plain tuple.
-        """
+                Whether or not to return a [`DecoderOutput`] instead of a plain tuple."""
         x = sample
         posterior = self.encode(x).latent_dist
         if sample_posterior:

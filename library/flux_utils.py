@@ -26,19 +26,7 @@ MODEL_NAME_SCHNELL = "schnell"
 
 
 def analyze_checkpoint_state(ckpt_path: str) -> Tuple[bool, bool, Tuple[int, int], List[str]]:
-    """
-    チェックポイントの状態を分析し、DiffusersかBFLか、devかschnellか、ブロック数を計算して返す。
-
-    Args:
-        ckpt_path (str): チェックポイントファイルまたはディレクトリのパス。
-
-    Returns:
-        Tuple[bool, bool, Tuple[int, int], List[str]]:
-            - bool: Diffusersかどうかを示すフラグ。
-            - bool: Schnellかどうかを示すフラグ。
-            - Tuple[int, int]: ダブルブロックとシングルブロックの数。
-            - List[str]: チェックポイントに含まれるキーのリスト。
-    """
+    """bool, Tuple[int, int]"""
     # check the state dict: Diffusers or BFL, dev or schnell, number of blocks
     logger.info(f"Checking the state dict: Diffusers or BFL, dev or schnell")
 
@@ -286,8 +274,7 @@ def load_t5xxl(
     disable_mmap: bool = False,
     state_dict: Optional[dict] = None,
 ) -> T5EncoderModel:
-    T5_CONFIG_JSON = """
-{
+    T5_CONFIG_JSON = """{
   "architectures": [
     "T5EncoderModel"
   ],
@@ -317,8 +304,7 @@ def load_t5xxl(
   "transformers_version": "4.41.2",
   "use_cache": true,
   "vocab_size": 32128
-}
-"""
+}"""
     config = json.loads(T5_CONFIG_JSON)
     config = T5Config(**config)
     with init_empty_weights():
@@ -348,17 +334,13 @@ def prepare_img_ids(batch_size: int, packed_latent_height: int, packed_latent_wi
 
 
 def unpack_latents(x: torch.Tensor, packed_latent_height: int, packed_latent_width: int) -> torch.Tensor:
-    """
-    x: [b (h w) (c ph pw)] -> [b c (h ph) (w pw)], ph=2, pw=2
-    """
+    """x: [b (h w) (c ph pw)] -> [b c (h ph) (w pw)], ph=2, pw=2"""
     x = einops.rearrange(x, "b (h w) (c ph pw) -> b c (h ph) (w pw)", h=packed_latent_height, w=packed_latent_width, ph=2, pw=2)
     return x
 
 
 def pack_latents(x: torch.Tensor) -> torch.Tensor:
-    """
-    x: [b c (h ph) (w pw)] -> [b (h w) (c ph pw)], ph=2, pw=2
-    """
+    """x: [b c (h ph) (w pw)] -> [b (h w) (c ph pw)], ph=2, pw=2"""
     x = einops.rearrange(x, "b c (h ph) (w pw) -> b (h w) (c ph pw)", ph=2, pw=2)
     return x
 

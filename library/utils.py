@@ -29,15 +29,15 @@ def add_logging_arguments(parser):
         type=str,
         default=None,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the logging level, default is INFO / ログレベルを設定する。デフォルトはINFO",
+        help="Set the logging level, default is INFO",
     )
     parser.add_argument(
         "--console_log_file",
         type=str,
         default=None,
-        help="Log to a file instead of stderr / 標準エラー出力ではなくファイルにログを出力する",
+        help="Log to a file instead of stderr",
     )
-    parser.add_argument("--console_log_simple", action="store_true", help="Simple log output / シンプルなログ出力")
+    parser.add_argument("--console_log_simple", action="store_true", help="Simple log output")
 
 
 def setup_logging(args=None, log_level=None, reset=False):
@@ -131,8 +131,7 @@ def weighs_to_device(layer: nn.Module, device: torch.device):
 
 
 def str_to_dtype(s: Optional[str], default_dtype: Optional[torch.dtype] = None) -> torch.dtype:
-    """
-    Convert a string to a torch.dtype
+    """Convert a string to a torch.dtype
 
     Args:
         s: string representation of the dtype
@@ -166,8 +165,7 @@ def str_to_dtype(s: Optional[str], default_dtype: Optional[torch.dtype] = None) 
         >>> str_to_dtype("fp8_e5m2")
         torch.float8_e5m2
         >>> str_to_dtype("fp8_e5m2fnuz")
-        torch.float8_e5m2fnuz
-    """
+        torch.float8_e5m2fnuz"""
     if s is None:
         return default_dtype
     if s in ["bf16", "bfloat16"]:
@@ -399,8 +397,7 @@ def pil_resize(image, size, interpolation):
 
 
 def resize_image(image: np.ndarray, width: int, height: int, resized_width: int, resized_height: int, resize_interpolation: Optional[str] = None):
-    """
-    Resize image with resize interpolation. Default interpolation to AREA if image is smaller, else LANCZOS.
+    """Resize image with resize interpolation. Default interpolation to AREA if image is smaller, else LANCZOS.
 
     Args:
         image: numpy.ndarray
@@ -411,8 +408,7 @@ def resize_image(image: np.ndarray, width: int, height: int, resized_width: int,
         resize_interpolation: Optional[str] Resize interpolation method "lanczos", "area", "bilinear", "bicubic", "nearest", "box"
 
     Returns:
-        image
-    """
+        image"""
 
     # Ensure all size parameters are actual integers
     width = int(width)
@@ -443,41 +439,37 @@ def resize_image(image: np.ndarray, width: int, height: int, resized_width: int,
 
 
 def get_cv2_interpolation(interpolation: Optional[str]) -> Optional[int]:
-    """
-    Convert interpolation value to cv2 interpolation integer
+    """Convert interpolation value to cv2 interpolation integer
 
-    https://docs.opencv.org/3.4/da/d54/group__imgproc__transform.html#ga5bb5a1fea74ea38e1a5445ca803ff121
-    """
+    https://docs.opencv.org/3.4/da/d54/group__imgproc__transform.html#ga5bb5a1fea74ea38e1a5445ca803ff121"""
     if interpolation is None:
         return None 
 
     if interpolation == "lanczos" or interpolation == "lanczos4":
-        # Lanczos interpolation over 8x8 neighborhood 
+        # Lanczos interpolation over 8x8 neighborhood
         return cv2.INTER_LANCZOS4
     elif interpolation == "nearest":
-        # Bit exact nearest neighbor interpolation. This will produce same results as the nearest neighbor method in PIL, scikit-image or Matlab. 
+        # Bit exact nearest neighbor interpolation. This will produce same results as the nearest neighbor method in PIL, scikit-image or Matlab.
         return cv2.INTER_NEAREST_EXACT
     elif interpolation == "bilinear" or interpolation == "linear":
         # bilinear interpolation
         return cv2.INTER_LINEAR
     elif interpolation == "bicubic" or interpolation == "cubic":
-        # bicubic interpolation 
+        # bicubic interpolation
         return cv2.INTER_CUBIC
     elif interpolation == "area":
-        # resampling using pixel area relation. It may be a preferred method for image decimation, as it gives moire'-free results. But when the image is zoomed, it is similar to the INTER_NEAREST method. 
+        # resampling using pixel area relation. It may be a preferred method for image decimation, as it gives moire'-free results. But when the image is zoomed, it is similar to the INTER_NEAREST method.
         return cv2.INTER_AREA
     elif interpolation == "box":
-        # resampling using pixel area relation. It may be a preferred method for image decimation, as it gives moire'-free results. But when the image is zoomed, it is similar to the INTER_NEAREST method. 
+        # resampling using pixel area relation. It may be a preferred method for image decimation, as it gives moire'-free results. But when the image is zoomed, it is similar to the INTER_NEAREST method.
         return cv2.INTER_AREA
     else:
         return None
 
 def get_pil_interpolation(interpolation: Optional[str]) -> Optional[Image.Resampling]:
-    """
-    Convert interpolation value to PIL interpolation
+    """Convert interpolation value to PIL interpolation
 
-    https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-filters
-    """
+    https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-filters"""
     if interpolation is None:
         return None 
 
@@ -493,9 +485,9 @@ def get_pil_interpolation(interpolation: Optional[str]) -> Optional[Image.Resamp
         # For resize calculate the output pixel value using cubic interpolation on all pixels that may contribute to the output value. For other transformations cubic interpolation over a 4x4 environment in the input image is used.
         return Image.Resampling.BICUBIC
     elif interpolation == "area":
-        # Image.Resampling.BOX may be more appropriate if upscaling 
+        # Image.Resampling.BOX may be more appropriate if upscaling
         # Area interpolation is related to cv2.INTER_AREA
-        # Produces a sharper image than Resampling.BILINEAR, doesn’t have dislocations on local level like with Resampling.BOX.
+        # Produces a sharper image than Resampling.BILINEAR
         return Image.Resampling.HAMMING
     elif interpolation == "box":
         # Each pixel of source image contributes to one pixel of the destination image with identical weights. For upscaling is equivalent of Resampling.NEAREST.
@@ -562,7 +554,7 @@ class GradualLatent:
 
         x = torch.nn.functional.interpolate(x, size=resized_size, mode="bicubic", align_corners=False).to(dtype=org_dtype)
 
-        # apply unsharp mask / アンシャープマスクを適用する
+        # apply unsharp mask
         if unsharp and self.gaussian_blur_ksize:
             x = self.apply_unshark_mask(x)
 
@@ -587,8 +579,7 @@ class EulerAncestralDiscreteSchedulerGL(EulerAncestralDiscreteScheduler):
         generator: Optional[torch.Generator] = None,
         return_dict: bool = True,
     ) -> Union[EulerAncestralDiscreteSchedulerOutput, Tuple]:
-        """
-        Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
+        """Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
         process from the learned model outputs (most often the predicted noise).
 
         Args:
@@ -608,9 +599,7 @@ class EulerAncestralDiscreteSchedulerGL(EulerAncestralDiscreteScheduler):
             [`~schedulers.scheduling_euler_ancestral_discrete.EulerAncestralDiscreteSchedulerOutput`] or `tuple`:
                 If return_dict is `True`,
                 [`~schedulers.scheduling_euler_ancestral_discrete.EulerAncestralDiscreteSchedulerOutput`] is returned,
-                otherwise a tuple is returned where the first element is the sample tensor.
-
-        """
+                otherwise a tuple is returned where the first element is the sample tensor."""
 
         if isinstance(timestep, int) or isinstance(timestep, torch.IntTensor) or isinstance(timestep, torch.LongTensor):
             raise ValueError(

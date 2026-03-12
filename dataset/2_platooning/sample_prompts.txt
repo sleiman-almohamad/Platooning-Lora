@@ -1,7 +1,0 @@
-platoontrucks, a long line of semi-trucks driving closely together on a highway, daytime, clear sky, realistic, highly detailed, photorealistic, cinematic lighting, wide shot --neg lowres, bad anatomy, deformed, blurry, cartoon, too many wheels, single truck
-platoontrucks, a futuristic truck convoy, night, neon lights, cyberpunk city background, detailed, digital art, sci-fi --neg blurry, low quality, human, road signs, text
-platoontrucks, close-up of the front of a truck in a platoon, focus on detail, weathered metal, exhaust smoke, industrial setting, dramatic lighting --neg deformed, ugly, cartoon, blurry, extra wheels
-platoontrucks, a small platoon of trucks passing through a desert landscape, dust clouds, golden hour, wide angle, high quality, professional photography --neg lowres, bad perspective, not a truck, not a platoon
-platoontrucks, conceptual art, stylized render, trucks in a sleek, aerodynamic platoon formation, abstract background, vibrant colors --neg realistic, blurry, bad art, messy, single vehicle
-a single truck, on a road, daytime, clear sky, realistic, highly detailed, professional photography --neg platoontrucks, multiple trucks, convoy, blurry, bad anatomy
-platoontrucks, an aerial view of a truck platoon on a winding mountain road, autumn colors, moody atmosphere, detailed landscape, drone shot --neg cropped, low quality, bad composition, too much sky

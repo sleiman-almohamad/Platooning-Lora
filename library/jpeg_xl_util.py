@@ -47,10 +47,8 @@ class JXLBitstream:
 
 
 def decode_codestream(file, offset: int = 0, offsets: List[List[int]] = None) -> Tuple[int,int]:
-    """
-    Decodes the actual codestream.
-    JXL codestream specification: http://www-internal/2022/18181-1
-    """
+    """Decodes the actual codestream.
+    JXL codestream specification: http://www-internal/2022/18181-1"""
 
     # Convert codestream to int within an object to get some handy methods.
     codestream = JXLBitstream(file, offset=offset, offsets=offsets)
@@ -107,10 +105,8 @@ def decode_codestream(file, offset: int = 0, offsets: List[List[int]] = None) ->
 
 
 def decode_container(file) -> Tuple[int,int]:
-    """
-    Parses the ISOBMFF container, extracts the codestream, and decodes it.
-    JXL container specification: http://www-internal/2022/18181-2
-    """
+    """Parses the ISOBMFF container, extracts the codestream, and decodes it.
+    JXL container specification: http://www-internal/2022/18181-2"""
 
     def parse_box(file, file_start: int) -> dict:
         file.seek(file_start)

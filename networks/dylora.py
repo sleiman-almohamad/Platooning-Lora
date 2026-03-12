@@ -1,5 +1,5 @@
 # some codes are copied from:
-# https://github.com/huawei-noah/KD-NLP/blob/main/DyLoRA/
+# https://github.com/huawei-noah/KD-NLP/blob/main/DyLoRA
 
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # Changes made to the original code:
@@ -26,9 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class DyLoRAModule(torch.nn.Module):
-    """
-    replaces forward method of the original Linear, instead of replacing the original Linear module.
-    """
+    """replaces forward method of the original Linear, instead of replacing the original Linear module."""
 
     # NOTE: support dropout in future
     def __init__(self, lora_name, org_module: torch.nn.Module, multiplier=1.0, lora_dim=4, alpha=1, unit=1):
@@ -49,7 +47,7 @@ class DyLoRAModule(torch.nn.Module):
             alpha = alpha.detach().float().numpy()  # without casting, bf16 causes error
         alpha = self.lora_dim if alpha is None or alpha == 0 else alpha
         self.scale = alpha / self.lora_dim
-        self.register_buffer("alpha", torch.tensor(alpha))  # 定数として扱える
+        self.register_buffer("alpha", torch.tensor(alpha))  
 
         self.is_conv2d = org_module.__class__.__name__ == "Conv2d"
         self.is_conv2d_3x3 = self.is_conv2d and org_module.kernel_size == (3, 3)
@@ -85,7 +83,7 @@ class DyLoRAModule(torch.nn.Module):
         trainable_rank = random.randint(0, self.lora_dim - 1)
         trainable_rank = trainable_rank - trainable_rank % self.unit  # make sure the rank is a multiple of unit
 
-        # 一部のパラメータを固定して、残りのパラメータを学習する
+        
         for i in range(0, trainable_rank):
             self.lora_A[i].requires_grad = False
             self.lora_B[i].requires_grad = False
@@ -114,15 +112,15 @@ class DyLoRAModule(torch.nn.Module):
             if self.is_conv2d:
                 ab = ab.transpose(1, 2).reshape(ab.size(0), -1, *x.size()[2:])  # (N, H*W, C) -> (N, C, H, W)
 
-        # 最後の項は、低rankをより大きくするためのスケーリング（じゃないかな）
+        
         result = result + ab * self.scale * math.sqrt(self.lora_dim / (trainable_rank + self.unit))
 
-        # NOTE weightに加算してからlinear/conv2dを呼んだほうが速いかも
+        
         return result
 
     def state_dict(self, destination=None, prefix="", keep_vars=False):
-        # state dictを通常のLoRAと同じにする:
-        # nn.ParameterListは `.lora_A.0` みたいな名前になるので、forwardと同様にcatして入れ替える
+        
+        
         sd = super().state_dict(destination=destination, prefix=prefix, keep_vars=keep_vars)
 
         lora_A_weight = torch.cat(tuple(self.lora_A), dim=0)
@@ -149,7 +147,7 @@ class DyLoRAModule(torch.nn.Module):
         return sd
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):
-        # 通常のLoRAと同じstate dictを読み込めるようにする：この方法はchatGPTに聞いた
+        
         lora_A_weight = state_dict.pop(self.lora_name + ".lora_down.weight", None)
         lora_B_weight = state_dict.pop(self.lora_name + ".lora_up.weight", None)
 
@@ -402,8 +400,7 @@ class DyLoRANetwork(torch.nn.Module):
             lora.apply_to()
             self.add_module(lora.lora_name, lora)
 
-    """
-    def merge_to(self, text_encoder, unet, weights_sd, dtype, device):
+    """def merge_to(self, text_encoder, unet, weights_sd, dtype, device):
         apply_text_encoder = apply_unet = False
         for key in weights_sd.keys():
             if key.startswith(DyLoRANetwork.LORA_PREFIX_TEXT_ENCODER):
@@ -428,10 +425,9 @@ class DyLoRANetwork(torch.nn.Module):
                     sd_for_lora[key[len(lora.lora_name) + 1 :]] = weights_sd[key]
             lora.merge_to(sd_for_lora, dtype, device)
 
-        logger.info(f"weights are merged")
-    """
+        logger.info(f"weights are merged")"""
 
-    # 二つのText Encoderに別々の学習率を設定できるようにするといいかも
+    
     def prepare_optimizer_params(self, text_encoder_lr, unet_lr, default_lr):
         self.requires_grad_(True)
         all_params = []

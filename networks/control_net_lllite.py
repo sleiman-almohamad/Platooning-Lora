@@ -7,30 +7,30 @@ setup_logging()
 import logging
 logger = logging.getLogger(__name__)
 
-# input_blocksに適用するかどうか / if True, input_blocks are not applied
+# if True, input_blocks are not applied
 SKIP_INPUT_BLOCKS = False
 
-# output_blocksに適用するかどうか / if True, output_blocks are not applied
+# if True, output_blocks are not applied
 SKIP_OUTPUT_BLOCKS = True
 
-# conv2dに適用するかどうか / if True, conv2d are not applied
+# if True, conv2d are not applied
 SKIP_CONV2D = False
 
-# transformer_blocksのみに適用するかどうか。Trueの場合、ResBlockには適用されない
+
 # if True, only transformer_blocks are applied, and ResBlocks are not applied
 TRANSFORMER_ONLY = True  # if True, SKIP_CONV2D is ignored because conv2d is not used in transformer_blocks
 
-# Trueならattn1とattn2にのみ適用し、ffなどには適用しない / if True, apply only to attn1 and attn2, not to ff etc.
+# if True, apply only to attn1 and attn2, not to ff etc.
 ATTN1_2_ONLY = True
 
-# Trueならattn1のQKV、attn2のQにのみ適用する、ATTN1_2_ONLY指定時のみ有効 / if True, apply only to attn1 QKV and attn2 Q, only valid when ATTN1_2_ONLY is specified
+# if True, apply only to attn1 QKV and attn2 Q, only valid when ATTN1_2_ONLY is specified
 ATTN_QKV_ONLY = True
 
-# Trueならattn1やffなどにのみ適用し、attn2などには適用しない / if True, apply only to attn1 and ff, not to attn2
-# ATTN1_2_ONLYと同時にTrueにできない / cannot be True at the same time as ATTN1_2_ONLY
+# if True, apply only to attn1 and ff, not to attn2
+# cannot be True at the same time as ATTN1_2_ONLY
 ATTN1_ETC_ONLY = False  # True
 
-# transformer_blocksの最大インデックス。Noneなら全てのtransformer_blocksに適用
+
 # max index of transformer_blocks. if None, apply to all transformer_blocks
 TRANSFORMER_MAX_BLOCK_INDEX = None
 
@@ -51,7 +51,7 @@ class LLLiteModule(torch.nn.Module):
         else:
             in_dim = org_module.in_features
 
-        # conditioning1はconditioning imageを embedding する。timestepごとに呼ばれない
+        
         # conditioning1 embeds conditioning image. it is not called for each timestep
         modules = []
         modules.append(torch.nn.Conv2d(3, cond_emb_dim // 2, kernel_size=4, stride=4, padding=0))  # to latent (from VAE) size
@@ -62,7 +62,7 @@ class LLLiteModule(torch.nn.Module):
             modules.append(torch.nn.ReLU(inplace=True))
             modules.append(torch.nn.Conv2d(cond_emb_dim // 2, cond_emb_dim, kernel_size=4, stride=4, padding=0))
         elif depth == 3:
-            # kernel size 8は大きすぎるので、4にする / kernel size 8 is too large, so set it to 4
+            # kernel size 8 is too large, so set it to 4
             modules.append(torch.nn.ReLU(inplace=True))
             modules.append(torch.nn.Conv2d(cond_emb_dim // 2, cond_emb_dim // 2, kernel_size=4, stride=4, padding=0))
             modules.append(torch.nn.ReLU(inplace=True))
@@ -70,10 +70,10 @@ class LLLiteModule(torch.nn.Module):
 
         self.conditioning1 = torch.nn.Sequential(*modules)
 
-        # downで入力の次元数を削減する。LoRAにヒントを得ていることにする
-        # midでconditioning image embeddingと入力を結合する
-        # upで元の次元数に戻す
-        # これらはtimestepごとに呼ばれる
+        
+        
+        
+        
         # reduce the number of input dimensions with down. inspired by LoRA
         # combine conditioning image embedding and input with mid
         # restore to the original dimension with up
@@ -92,7 +92,7 @@ class LLLiteModule(torch.nn.Module):
                 torch.nn.Conv2d(mlp_dim, in_dim, kernel_size=1, stride=1, padding=0),
             )
         else:
-            # midの前にconditioningをreshapeすること / reshape conditioning before mid
+            # reshape conditioning before mid
             self.down = torch.nn.Sequential(
                 torch.nn.Linear(in_dim, mlp_dim),
                 torch.nn.ReLU(inplace=True),
@@ -105,29 +105,26 @@ class LLLiteModule(torch.nn.Module):
                 torch.nn.Linear(mlp_dim, in_dim),
             )
 
-        # Zero-Convにする / set to Zero-Conv
+        # set to Zero-Conv
         torch.nn.init.zeros_(self.up[0].weight)  # zero conv
 
         self.depth = depth  # 1~3
         self.cond_emb = None
-        self.batch_cond_only = False  # Trueなら推論時のcondにのみ適用する / if True, apply only to cond at inference
-        self.use_zeros_for_batch_uncond = False  # Trueならuncondのconditioningを0にする / if True, set uncond conditioning to 0
+        self.batch_cond_only = False  # if True, apply only to cond at inference
+        self.use_zeros_for_batch_uncond = False  # if True, set uncond conditioning to 0
 
-        # batch_cond_onlyとuse_zeros_for_batch_uncondはどちらも適用すると生成画像の色味がおかしくなるので実際には使えそうにない
-        # Controlの種類によっては使えるかも
+        
+        
         # both batch_cond_only and use_zeros_for_batch_uncond make the color of the generated image strange, so it doesn't seem to be usable in practice
         # it may be available depending on the type of Control
 
     def set_cond_image(self, cond_image):
-        r"""
-        中でモデルを呼び出すので必要ならwith torch.no_grad()で囲む
-        / call the model inside, so if necessary, surround it with torch.no_grad()
-        """
+        r"""call the model inside, so if necessary, surround it with torch.no_grad()"""
         if cond_image is None:
             self.cond_emb = None
             return
 
-        # timestepごとに呼ばれないので、あらかじめ計算しておく / it is not called for each timestep, so calculate it in advance
+        # it is not called for each timestep, so calculate it in advance
         # logger.info(f"C {self.lllite_name}, cond_image.shape={cond_image.shape}")
         cx = self.conditioning1(cond_image)
         if not self.is_conv2d:
@@ -145,10 +142,7 @@ class LLLiteModule(torch.nn.Module):
         self.org_module[0].forward = self.forward
 
     def forward(self, x):
-        r"""
-        学習用の便利forward。元のモジュールのforwardを呼び出す
-        / convenient forward for training. call the forward of the original module
-        """
+        r"""convenient forward for training. call the forward of the original module"""
         if self.multiplier == 0.0 or self.cond_emb is None:
             return self.org_forward(x)
 
@@ -160,8 +154,8 @@ class LLLiteModule(torch.nn.Module):
                 cx[0::2] = 0.0  # uncond is zero
         # logger.info(f"C {self.lllite_name}, x.shape={x.shape}, cx.shape={cx.shape}")
 
-        # downで入力の次元数を削減し、conditioning image embeddingと結合する
-        # 加算ではなくchannel方向に結合することで、うまいこと混ぜてくれることを期待している
+        
+        
         # down reduces the number of input dimensions and combines it with conditioning image embedding
         # we expect that it will mix well by combining in the channel direction instead of adding
 
@@ -173,13 +167,13 @@ class LLLiteModule(torch.nn.Module):
 
         cx = self.up(cx) * self.multiplier
 
-        # residual (x) を加算して元のforwardを呼び出す / add residual (x) and call the original forward
+        # add residual (x) and call the original forward
         if self.batch_cond_only:
             zx = torch.zeros_like(x)
             zx[1::2] += cx
             cx = zx
 
-        x = self.org_forward(x + cx)  # ここで元のモジュールを呼び出す / call the original module here
+        x = self.org_forward(x + cx)  # call the original module here
         return x
 
 
@@ -214,7 +208,7 @@ class ControlNetLLLite(torch.nn.Module):
                         is_conv2d = child_module.__class__.__name__ == "Conv2d"
 
                         if is_linear or (is_conv2d and not SKIP_CONV2D):
-                            # block indexからdepthを計算: depthはconditioningのサイズやチャネルを計算するのに使う
+                            
                             # block index to depth: depth is using to calculate conditioning size and channels
                             block_name, index1, index2 = (name + "." + child_name).split(".")[:3]
                             index1 = int(index1)
@@ -243,8 +237,8 @@ class ControlNetLLLite(torch.nn.Module):
                                     if tf_index > TRANSFORMER_MAX_BLOCK_INDEX:
                                         continue
 
-                            #  time embは適用外とする
-                            # attn2のconditioning (CLIPからの入力) はshapeが違うので適用できない
+                            
+                            
                             # time emb is not applied
                             # attn2 conditioning (input from CLIP) cannot be applied because the shape is different
                             if "emb_layers" in lllite_name or (
@@ -295,10 +289,7 @@ class ControlNetLLLite(torch.nn.Module):
         return x  # dummy
 
     def set_cond_image(self, cond_image):
-        r"""
-        中でモデルを呼び出すので必要ならwith torch.no_grad()で囲む
-        / call the model inside, so if necessary, surround it with torch.no_grad()
-        """
+        r"""call the model inside, so if necessary, surround it with torch.no_grad()"""
         for module in self.unet_modules:
             module.set_cond_image(cond_image)
 
@@ -327,7 +318,7 @@ class ControlNetLLLite(torch.nn.Module):
             module.apply_to()
             self.add_module(module.lllite_name, module)
 
-    # マージできるかどうかを返す
+    
     def is_mergeable(self):
         return False
 
@@ -372,7 +363,7 @@ class ControlNetLLLite(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    # デバッグ用 / for debug
+    # for debug
 
     # sdxl_original_unet.USE_REENTRANT = False
 
@@ -408,7 +399,7 @@ if __name__ == "__main__":
     # image = torchviz.make_dot(output, params=dict(controlnet.named_parameters()))
     # logger.info("render")
     # image.format = "svg" # "png"
-    # image.render("NeuralNet") # すごく時間がかかるので注意 / be careful because it takes a long time
+    # be careful because it takes a long time
     # input()
 
     import bitsandbytes

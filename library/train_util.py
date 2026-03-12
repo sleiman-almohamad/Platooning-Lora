@@ -295,7 +295,7 @@ class BucketManager:
                 reso = self.predefined_resos[predefined_bucket_id]
 
             ar_reso = reso[0] / reso[1]
-            if aspect_ratio > ar_reso:  # Width is longer → align height
+            if aspect_ratio > ar_reso:  
                 scale = reso[1] / image_height
             else:
                 scale = reso[0] / image_width
@@ -351,7 +351,7 @@ class BucketManager:
         bucket_ar = bucket_reso[0] / bucket_reso[1]
         image_ar = image_size[0] / image_size[1]
         if bucket_ar > image_ar:
-            # Bucket is wider → align height
+            
             resized_width = bucket_reso[1] * image_ar
             resized_height = bucket_reso[1]
         else:
@@ -499,7 +499,7 @@ class DreamBoothSubset(BaseSubset):
         validation_split: Optional[float] = 0.0,
         resize_interpolation: Optional[str] = None,
     ) -> None:
-        assert image_dir is not None, "image_dir must be specified / image_dirは指定が必須です"
+        assert image_dir is not None, "image_dir must be specified"
 
         super().__init__(
             image_dir,
@@ -637,7 +637,7 @@ class ControlNetSubset(BaseSubset):
         validation_split: Optional[float] = 0.0,
         resize_interpolation: Optional[str] = None,
     ) -> None:
-        assert image_dir is not None, "image_dir must be specified / image_dirは指定が必須です"
+        assert image_dir is not None, "image_dir must be specified"
 
         super().__init__(
             image_dir,
@@ -840,11 +840,11 @@ class BaseDataset(torch.utils.data.Dataset):
 
                 # wildcard is like '{aaa|bbb|ccc...}'
                 # escape the curly braces like {{ or }}
-                replacer1 = "⦅"
-                replacer2 = "⦆"
+                replacer1 = ""
+                replacer2 = ""
                 while replacer1 in caption or replacer2 in caption:
-                    replacer1 += "⦅"
-                    replacer2 += "⦆"
+                    replacer1 += ""
+                    replacer2 += ""
 
                 caption = caption.replace("{{", replacer1).replace("}}", replacer2)
 
@@ -883,7 +883,7 @@ class BaseDataset(torch.utils.data.Dataset):
                         fixed_tokens = flex_tokens[: subset.keep_tokens]
                         flex_tokens = tokens[subset.keep_tokens :]
 
-                if subset.token_warmup_step < 1:  # 初回に上書きする
+                if subset.token_warmup_step < 1:  
                     subset.token_warmup_step = math.floor(subset.token_warmup_step * self.max_train_steps)
                 if subset.token_warmup_step and self.current_step < subset.token_warmup_step:
                     tokens_len = (
@@ -908,13 +908,13 @@ class BaseDataset(torch.utils.data.Dataset):
 
                 flex_tokens = dropout_tags(flex_tokens)
 
-                caption = ", ".join(fixed_tokens + flex_tokens + fixed_suffix_tokens)
+                caption = ",".join(fixed_tokens + flex_tokens + fixed_suffix_tokens)
 
             # process secondary separator
             if subset.secondary_separator:
                 caption = caption.replace(subset.secondary_separator, subset.caption_separator)
 
-            # textual inversion対応
+            
             for str_from, str_to in self.replacements.items():
                 if str_from == "":
                     # replace all
@@ -940,8 +940,8 @@ class BaseDataset(torch.utils.data.Dataset):
             iids_list = []
             if tokenizer.pad_token_id == tokenizer.eos_token_id:
                 # v1
-                # 77以上の時は "<BOS> .... <EOS> <EOS> <EOS>" でトータル227とかになっているので、"<BOS>...<EOS>"の三連に変換する
-                # 1111氏のやつは , で区切る、とかしているようだが　とりあえず単純に
+                
+                
                 for i in range(
                     1, self.tokenizer_max_length - tokenizer.model_max_length + 2, tokenizer.model_max_length - 2
                 ):  # (1, 152, 75)
@@ -954,7 +954,7 @@ class BaseDataset(torch.utils.data.Dataset):
                     iids_list.append(ids_chunk)
             else:
                 # v2 or SDXL
-                # 77以上の時は "<BOS> .... <EOS> <PAD> <PAD>..." でトータル227とかになっているので、"<BOS>...<EOS> <PAD> <PAD> ..."の三連に変換する
+                
                 for i in range(1, self.tokenizer_max_length - tokenizer.model_max_length + 2, tokenizer.model_max_length - 2):
                     ids_chunk = (
                         input_ids[0].unsqueeze(0),  # BOS
@@ -963,11 +963,11 @@ class BaseDataset(torch.utils.data.Dataset):
                     )  # PAD or EOS
                     ids_chunk = torch.cat(ids_chunk)
 
-                    # 末尾が <EOS> <PAD> または <PAD> <PAD> の場合は、何もしなくてよい
-                    # 末尾が x <PAD/EOS> の場合は末尾を <EOS> に変える（x <EOS> なら結果的に変化なし）
+                    
+                    
                     if ids_chunk[-2] != tokenizer.eos_token_id and ids_chunk[-2] != tokenizer.pad_token_id:
                         ids_chunk[-1] = tokenizer.eos_token_id
-                    # 先頭が <BOS> <PAD> ... の場合は <BOS> <EOS> <PAD> ... に変える
+                    
                     if ids_chunk[1] == tokenizer.pad_token_id:
                         ids_chunk[1] = tokenizer.eos_token_id
 
@@ -981,10 +981,8 @@ class BaseDataset(torch.utils.data.Dataset):
         self.image_to_subset[info.image_key] = subset
 
     def make_buckets(self):
-        """
-        bucketingを行わない場合も呼び出し必須（ひとつだけbucketを作る）
-        min_size and max_size are ignored when enable_bucket is False
-        """
+        """bucketingbucket
+        min_size and max_size are ignored when enable_bucket is False"""
         logger.info("loading image sizes.")
         for info in tqdm(self.image_data.values()):
             if info.image_size is None:
@@ -1012,9 +1010,9 @@ class BaseDataset(torch.utils.data.Dataset):
         else:
             logger.info("prepare dataset")
 
-        # bucketを作成し、画像をbucketに振り分ける
+        
         if self.enable_bucket:
-            if self.bucket_manager is None:  # fine tuningの場合でmetadataに定義がある場合は、すでに初期化済み
+            if self.bucket_manager is None:  
                 self.bucket_manager = BucketManager(
                     self.bucket_no_upscale,
                     (self.width, self.height),
@@ -1026,7 +1024,7 @@ class BaseDataset(torch.utils.data.Dataset):
                     self.bucket_manager.make_buckets()
                 else:
                     logger.warning(
-                        "min_bucket_reso and max_bucket_reso are ignored if bucket_no_upscale is set, because bucket reso is defined by image size automatically / bucket_no_upscaleが指定された場合は、bucketの解像度は画像サイズから自動計算されるため、min_bucket_resoとmax_bucket_resoは無視されます"
+                        "min_bucket_reso and max_bucket_reso are ignored if bucket_no_upscale is set, because bucket reso is defined by image size automatically"
                     )
 
             img_ar_errors = []
@@ -1042,7 +1040,7 @@ class BaseDataset(torch.utils.data.Dataset):
             self.bucket_manager.sort()
         else:
             self.bucket_manager = BucketManager(False, (self.width, self.height), None, None, None)
-            self.bucket_manager.set_predefined_resos([(self.width, self.height)])  # ひとつの固定サイズbucketのみ
+            self.bucket_manager.set_predefined_resos([(self.width, self.height)])  
             for image_info in self.image_data.values():
                 image_width, image_height = image_info.image_size
                 image_info.bucket_reso, image_info.resized_size, _ = self.bucket_manager.select_bucket(image_width, image_height)
@@ -1051,10 +1049,10 @@ class BaseDataset(torch.utils.data.Dataset):
             for _ in range(image_info.num_repeats):
                 self.bucket_manager.add_image(image_info.bucket_reso, image_info.image_key)
 
-        # bucket情報を表示、格納する
+        
         if self.enable_bucket:
             self.bucket_info = {"buckets": {}}
-            logger.info("number of images (including repeats) / 各bucketの画像枚数（繰り返し回数を含む）")
+            logger.info("number of images (including repeats)")
             for i, (reso, bucket) in enumerate(zip(self.bucket_manager.resos, self.bucket_manager.buckets)):
                 count = len(bucket)
                 if count > 0:
@@ -1066,7 +1064,7 @@ class BaseDataset(torch.utils.data.Dataset):
             self.bucket_info["mean_img_ar_error"] = mean_img_ar_error
             logger.info(f"mean ar error (without repeats): {mean_img_ar_error}")
 
-        # データ参照用indexを作る。このindexはdatasetのshuffleに用いられる
+        
         self.buckets_indices: List[BucketBatchIndex] = []
         for bucket_index, bucket in enumerate(self.bucket_manager.buckets):
             batch_count = int(math.ceil(len(bucket) / self.batch_size))
@@ -1086,7 +1084,7 @@ class BaseDataset(torch.utils.data.Dataset):
     def verify_bucket_reso_steps(self, min_steps: int):
         assert self.bucket_reso_steps is None or self.bucket_reso_steps % min_steps == 0, (
             f"bucket_reso_steps is {self.bucket_reso_steps}. it must be divisible by {min_steps}.\n"
-            + f"bucket_reso_stepsが{self.bucket_reso_steps}です。{min_steps}で割り切れる必要があります"
+            + f"bucket_reso_steps{self.bucket_reso_steps}{min_steps}"
         )
 
     def is_latent_cacheable(self):
@@ -1106,10 +1104,8 @@ class BaseDataset(torch.utils.data.Dataset):
         )
 
     def new_cache_latents(self, model: Any, accelerator: Accelerator):
-        r"""
-        a brand new method to cache latents. This method caches latents with caching strategy.
-        normal cache_latents method is used by default, but this method is used when caching strategy is specified.
-        """
+        r"""a brand new method to cache latents. This method caches latents with caching strategy.
+        normal cache_latents method is used by default, but this method is used when caching strategy is specified."""
         logger.info("caching latents with caching strategy.")
         caching_strategy = LatentsCachingStrategy.get_strategy()
         image_infos = list(self.image_data.values())
@@ -1210,7 +1206,7 @@ class BaseDataset(torch.utils.data.Dataset):
             executor.shutdown()
 
     def cache_latents(self, vae, vae_batch_size=1, cache_to_disk=False, is_main_process=True, file_suffix=".npz"):
-        # マルチGPUには対応していないので、そちらはtools/cache_latents.pyを使うこと
+        
         logger.info("caching latents.")
 
         image_infos = list(self.image_data.values())
@@ -1379,8 +1375,8 @@ class BaseDataset(torch.utils.data.Dataset):
         file_suffix=TEXT_ENCODER_OUTPUTS_CACHE_SUFFIX,
         batch_size=None,
     ):
-        # latentsのキャッシュと同様に、ディスクへのキャッシュに対応する
-        # またマルチGPUには対応していないので、そちらはtools/cache_latents.pyを使うこと
+        
+        
         logger.info("caching text encoder outputs.")
 
         tokenize_strategy = TokenizeStrategy.get_strategy()
@@ -1494,19 +1490,19 @@ class BaseDataset(torch.utils.data.Dataset):
 
         return img, face_cx, face_cy, face_w, face_h
 
-    # いい感じに切り出す
+    
     def crop_target(self, subset: BaseSubset, image, face_cx, face_cy, face_w, face_h):
         height, width = image.shape[0:2]
         if height == self.height and width == self.width:
             return image
 
-        # 画像サイズはsizeより大きいのでリサイズする
+        
         face_size = max(face_w, face_h)
-        size = min(self.height, self.width)  # 短いほう
-        min_scale = max(self.height / height, self.width / width)  # 画像がモデル入力サイズぴったりになる倍率（最小の倍率）
-        min_scale = min(1.0, max(min_scale, size / (face_size * subset.face_crop_aug_range[1])))  # 指定した顔最小サイズ
-        max_scale = min(1.0, max(min_scale, size / (face_size * subset.face_crop_aug_range[0])))  # 指定した顔最大サイズ
-        if min_scale >= max_scale:  # range指定がmin==max
+        size = min(self.height, self.width)  
+        min_scale = max(self.height / height, self.width / width)  
+        min_scale = min(1.0, max(min_scale, size / (face_size * subset.face_crop_aug_range[1])))  
+        max_scale = min(1.0, max(min_scale, size / (face_size * subset.face_crop_aug_range[0])))  
+        if min_scale >= max_scale:  
             scale = min_scale
         else:
             scale = random.uniform(min_scale, max_scale)
@@ -1519,16 +1515,16 @@ class BaseDataset(torch.utils.data.Dataset):
         face_cy = int(face_cy * scale + 0.5)
         height, width = nh, nw
 
-        # 顔を中心として448*640とかへ切り出す
+        
         for axis, (target_size, length, face_p) in enumerate(zip((self.height, self.width), (height, width), (face_cy, face_cx))):
-            p1 = face_p - target_size // 2  # 顔を中心に持ってくるための切り出し位置
+            p1 = face_p - target_size // 2  
 
             if subset.random_crop:
-                # 背景も含めるために顔を中心に置く確率を高めつつずらす
-                range = max(length - face_p, face_p)  # 画像の端から顔中心までの距離の長いほう
-                p1 = p1 + (random.randint(0, range) + random.randint(0, range)) - range  # -range ~ +range までのいい感じの乱数
+                
+                range = max(length - face_p, face_p)  
+                p1 = p1 + (random.randint(0, range) + random.randint(0, range)) - range  
             else:
-                # range指定があるときのみ、すこしだけランダムに（わりと適当）
+                
                 if subset.face_crop_aug_range[0] != subset.face_crop_aug_range[1]:
                     if face_size > size // 10 and face_size >= 40:
                         p1 = p1 + random.randint(-face_size // 20, +face_size // 20)
@@ -1562,7 +1558,7 @@ class BaseDataset(torch.utils.data.Dataset):
         original_sizes_hw = []
         crop_top_lefts = []
         target_sizes_hw = []
-        flippeds = []  # 変数名が微妙
+        flippeds = []  
         text_encoder_outputs_list = []
         custom_attributes = []
 
@@ -1577,8 +1573,8 @@ class BaseDataset(torch.utils.data.Dataset):
 
             flipped = subset.flip_aug and random.random() < 0.5  # not flipped or flipped with 50% chance
 
-            # image/latentsを処理する
-            if image_info.latents is not None:  # cache_latents=Trueの場合
+            # image
+            if image_info.latents is not None:  
                 original_size = image_info.latents_original_size
                 crop_ltrb = image_info.latents_crop_ltrb  # calc values later if flipped
                 if not flipped:
@@ -1589,7 +1585,7 @@ class BaseDataset(torch.utils.data.Dataset):
                     alpha_mask = None if image_info.alpha_mask is None else torch.flip(image_info.alpha_mask, [1])
 
                 image = None
-            elif image_info.latents_npz is not None:  # FineTuningDatasetまたはcache_latents_to_disk=Trueの場合
+            elif image_info.latents_npz is not None:  
                 latents, original_size, crop_ltrb, flipped_latents, alpha_mask = (
                     self.latents_caching_strategy.load_latents_from_disk(image_info.latents_npz, image_info.bucket_reso)
                 )
@@ -1603,7 +1599,7 @@ class BaseDataset(torch.utils.data.Dataset):
 
                 image = None
             else:
-                # 画像を読み込み、必要ならcropする
+                
                 img, face_cx, face_cy, face_w, face_h = self.load_image_with_face_info(
                     subset, image_info.absolute_path, subset.alpha_mask
                 )
@@ -1614,12 +1610,12 @@ class BaseDataset(torch.utils.data.Dataset):
                         subset.random_crop, img, image_info.bucket_reso, image_info.resized_size, resize_interpolation=image_info.resize_interpolation
                     )
                 else:
-                    if face_cx > 0:  # 顔位置情報あり
+                    if face_cx > 0:  
                         img = self.crop_target(subset, img, face_cx, face_cy, face_w, face_h)
                     elif im_h > self.height or im_w > self.width:
                         assert (
                             subset.random_crop
-                        ), f"image too large, but cropping and bucketing are disabled / 画像サイズが大きいのでface_crop_aug_rangeかrandom_crop、またはbucketを有効にしてください: {image_info.absolute_path}"
+                        ), f"image too large, but cropping and bucketing are disabled"
                         if im_h > self.height:
                             p = random.randint(0, im_h - self.height)
                             img = img[p : p + self.height]
@@ -1630,7 +1626,7 @@ class BaseDataset(torch.utils.data.Dataset):
                     im_h, im_w = img.shape[0:2]
                     assert (
                         im_h == self.height and im_w == self.width
-                    ), f"image size is small / 画像サイズが小さいようです: {image_info.absolute_path}"
+                    ), f"image size is small"
 
                     original_size = [im_w, im_h]
                     crop_ltrb = (0, 0, 0, 0)
@@ -1659,7 +1655,7 @@ class BaseDataset(torch.utils.data.Dataset):
                 img = img[:, :, :3]  # remove alpha channel
 
                 latents = None
-                image = self.image_transforms(img)  # -1.0~1.0のtorch.Tensorになる
+                image = self.image_transforms(img)  
                 del img
 
             images.append(image)
@@ -1679,7 +1675,7 @@ class BaseDataset(torch.utils.data.Dataset):
             target_sizes_hw.append((int(target_size[1]), int(target_size[0])))
             flippeds.append(flipped)
 
-            # captionとtext encoder outputを処理する
+            
             caption = image_info.caption  # default
 
             tokenization_required = (
@@ -1805,7 +1801,7 @@ class BaseDataset(torch.utils.data.Dataset):
                 random_crop = subset.random_crop
                 bucket_reso = image_info.bucket_reso
             else:
-                # TODO そもそも混在してても動くようにしたほうがいい
+                
                 assert flip_aug == subset.flip_aug, "flip_aug must be same in a batch"
                 assert alpha_mask == subset.alpha_mask, "alpha_mask must be same in a batch"
                 assert random_crop == subset.random_crop, "random_crop must be same in a batch"
@@ -1876,10 +1872,10 @@ class DreamBoothDataset(BaseDataset):
     ) -> None:
         super().__init__(resolution, network_multiplier, debug_dataset, resize_interpolation)
 
-        assert resolution is not None, f"resolution is required / resolution（解像度）指定は必須です"
+        assert resolution is not None, f"resolution is required"
 
         self.batch_size = batch_size
-        self.size = min(self.width, self.height)  # 短いほう
+        self.size = min(self.width, self.height)  
         self.prior_loss_weight = prior_loss_weight
         self.latents_cache = None
         self.is_training_dataset = is_training_dataset
@@ -1898,11 +1894,11 @@ class DreamBoothDataset(BaseDataset):
         else:
             self.min_bucket_reso = None
             self.max_bucket_reso = None
-            self.bucket_reso_steps = None  # この情報は使われない
+            self.bucket_reso_steps = None  
             self.bucket_no_upscale = False
 
         def read_caption(img_path, caption_extension, enable_wildcard):
-            # captionの候補ファイル名を作る
+            
             base_name = os.path.splitext(img_path)[0]
             base_name_face_det = base_name
             tokens = base_name.split("_")
@@ -1917,11 +1913,11 @@ class DreamBoothDataset(BaseDataset):
                         try:
                             lines = f.readlines()
                         except UnicodeDecodeError as e:
-                            logger.error(f"illegal char in file (not UTF-8) / ファイルにUTF-8以外の文字があります: {cap_path}")
+                            logger.error(f"illegal char in file (not UTF-8)")
                             raise e
-                        assert len(lines) > 0, f"caption file is empty / キャプションファイルが空です: {cap_path}"
+                        assert len(lines) > 0, f"caption file is empty"
                         if enable_wildcard:
-                            caption = "\n".join([line.strip() for line in lines if line.strip() != ""])  # 空行を除く、改行で連結
+                            caption = "\n".join([line.strip() for line in lines if line.strip() != ""])  
                         else:
                             caption = lines[0].strip()
                     break
@@ -1936,12 +1932,12 @@ class DreamBoothDataset(BaseDataset):
             use_cached_info_for_subset = subset.cache_info
             if use_cached_info_for_subset:
                 logger.info(
-                    f"using cached image info for this subset / このサブセットで、キャッシュされた画像情報を使います: {info_cache_file}"
+                    f"using cached image info for this subset"
                 )
                 if not os.path.isfile(info_cache_file):
                     logger.warning(
                         f"image info file not found. You can ignore this warning if this is the first time to use this subset"
-                        + " / キャッシュファイルが見つかりませんでした。初回実行時はこの警告を無視してください: {metadata_file}"
+                        + ""
                     )
                     use_cached_info_for_subset = False
 
@@ -1995,7 +1991,7 @@ class DreamBoothDataset(BaseDataset):
             # We want to create a training and validation split. This should be improved in the future
             # to allow a clearer distinction between training and validation. This can be seen as a
             # short-term solution to limit what is necessary to implement validation datasets
-            #
+            
             # We split the dataset for the subset based on if we are doing a validation split
             # The self.is_training_dataset defines the type of dataset, training or validation
             # if self.is_training_dataset is True -> training dataset
@@ -2020,14 +2016,14 @@ class DreamBoothDataset(BaseDataset):
                 captions = [meta["caption"] for meta in metas.values()]
                 missing_captions = [img_path for img_path, caption in zip(img_paths, captions) if caption is None or caption == ""]
             else:
-                # 画像ファイルごとにプロンプトを読み込み、もしあればそちらを使う
+                
                 captions = []
                 missing_captions = []
                 for img_path in tqdm(img_paths, desc="read caption"):
                     cap_for_img = read_caption(img_path, subset.caption_extension, subset.enable_wildcard)
                     if cap_for_img is None and subset.class_tokens is None:
                         logger.warning(
-                            f"neither caption file nor class tokens are found. use empty caption for {img_path} / キャプションファイルもclass tokenも見つかりませんでした。空のキャプションを使用します: {img_path}"
+                            f"neither caption file nor class tokens are found. use empty caption for {img_path}"
                         )
                         captions.append("")
                         missing_captions.append(img_path)
@@ -2038,7 +2034,7 @@ class DreamBoothDataset(BaseDataset):
                         else:
                             captions.append(cap_for_img)
 
-            self.set_tag_frequency(os.path.basename(subset.image_dir), captions)  # タグ頻度を記録
+            self.set_tag_frequency(os.path.basename(subset.image_dir), captions)  
 
             if missing_captions:
                 number_of_missing_captions = len(missing_captions)
@@ -2046,7 +2042,7 @@ class DreamBoothDataset(BaseDataset):
                 remaining_missing_captions = number_of_missing_captions - number_of_missing_captions_to_show
 
                 logger.warning(
-                    f"No caption file found for {number_of_missing_captions} images. Training will continue without captions for these images. If class token exists, it will be used. / {number_of_missing_captions}枚の画像にキャプションファイルが見つかりませんでした。これらの画像についてはキャプションなしで学習を続行します。class tokenが存在する場合はそれを使います。"
+                    f"No caption file found for {number_of_missing_captions} images. Training will continue without captions for these images. If class token exists, it will be used."
                 )
                 for i, missing_caption in enumerate(missing_captions):
                     if i >= number_of_missing_captions_to_show:
@@ -2055,14 +2051,14 @@ class DreamBoothDataset(BaseDataset):
                     logger.warning(missing_caption)
 
             if not use_cached_info_for_subset and subset.cache_info:
-                logger.info(f"cache image info for / 画像情報をキャッシュします : {info_cache_file}")
+                logger.info(f"cache image info for")
                 sizes = [self.get_image_size(img_path) for img_path in tqdm(img_paths, desc="get image size")]
                 matas = {}
                 for img_path, caption, size in zip(img_paths, captions, sizes):
                     matas[img_path] = {"caption": caption, "resolution": list(size)}
                 with open(info_cache_file, "w", encoding="utf-8") as f:
                     json.dump(matas, f, ensure_ascii=False, indent=2)
-                logger.info(f"cache image info done for / 画像情報を出力しました : {info_cache_file}")
+                logger.info(f"cache image info done for")
 
             # if sizes are not set, image size will be read in make_buckets
             return img_paths, captions, sizes
@@ -2075,20 +2071,20 @@ class DreamBoothDataset(BaseDataset):
             num_repeats = subset.num_repeats if self.is_training_dataset else 1
             if num_repeats < 1:
                 logger.warning(
-                    f"ignore subset with image_dir='{subset.image_dir}': num_repeats is less than 1 / num_repeatsが1を下回っているためサブセットを無視します: {num_repeats}"
+                    f"ignore subset with image_dir='{subset.image_dir}': num_repeats is less than 1"
                 )
                 continue
 
             if subset in self.subsets:
                 logger.warning(
-                    f"ignore duplicated subset with image_dir='{subset.image_dir}': use the first one / 既にサブセットが登録されているため、重複した後発のサブセットを無視します"
+                    f"ignore duplicated subset with image_dir='{subset.image_dir}': use the first one"
                 )
                 continue
 
             img_paths, captions, sizes = load_dreambooth_dir(subset)
             if len(img_paths) < 1:
                 logger.warning(
-                    f"ignore subset with image_dir='{subset.image_dir}': no images found / 画像が見つからないためサブセットを無視します"
+                    f"ignore subset with image_dir='{subset.image_dir}': no images found"
                 )
                 continue
 
@@ -2117,12 +2113,12 @@ class DreamBoothDataset(BaseDataset):
 
         logger.info(f"{num_reg_images} reg images with repeats.")
         if num_train_images < num_reg_images:
-            logger.warning("some of reg images are not used / 正則化画像の数が多いので、一部使用されない正則化画像があります")
+            logger.warning("some of reg images are not used")
 
         if num_reg_images == 0:
-            logger.warning("no regularization images / 正則化画像が見つかりませんでした")
+            logger.warning("no regularization images")
         else:
-            # num_repeatsを計算する：どうせ大した数ではないのでループで処理する
+            
             n = 0
             first_loop = True
             while n < num_train_images:
@@ -2167,45 +2163,45 @@ class FineTuningDataset(BaseDataset):
         for subset in subsets:
             if subset.num_repeats < 1:
                 logger.warning(
-                    f"ignore subset with metadata_file='{subset.metadata_file}': num_repeats is less than 1 / num_repeatsが1を下回っているためサブセットを無視します: {subset.num_repeats}"
+                    f"ignore subset with metadata_file='{subset.metadata_file}': num_repeats is less than 1"
                 )
                 continue
 
             if subset in self.subsets:
                 logger.warning(
-                    f"ignore duplicated subset with metadata_file='{subset.metadata_file}': use the first one / 既にサブセットが登録されているため、重複した後発のサブセットを無視します"
+                    f"ignore duplicated subset with metadata_file='{subset.metadata_file}': use the first one"
                 )
                 continue
 
-            # メタデータを読み込む
+            
             if os.path.exists(subset.metadata_file):
                 logger.info(f"loading existing metadata: {subset.metadata_file}")
                 with open(subset.metadata_file, "rt", encoding="utf-8") as f:
                     metadata = json.load(f)
             else:
-                raise ValueError(f"no metadata / メタデータファイルがありません: {subset.metadata_file}")
+                raise ValueError(f"no metadata")
 
             if len(metadata) < 1:
                 logger.warning(
-                    f"ignore subset with '{subset.metadata_file}': no image entries found / 画像に関するデータが見つからないためサブセットを無視します"
+                    f"ignore subset with '{subset.metadata_file}': no image entries found"
                 )
                 continue
 
             tags_list = []
             for image_key, img_md in metadata.items():
-                # path情報を作る
+                
                 abs_path = None
 
-                # まず画像を優先して探す
+                
                 if os.path.exists(image_key):
                     abs_path = image_key
                 else:
-                    # わりといい加減だがいい方法が思いつかん
+                    
                     paths = glob_images(subset.image_dir, image_key)
                     if len(paths) > 0:
                         abs_path = paths[0]
 
-                # なければnpzを探す
+                
                 if abs_path is None:
                     if os.path.exists(os.path.splitext(image_key)[0] + ".npz"):
                         abs_path = os.path.splitext(image_key)[0] + ".npz"
@@ -2214,7 +2210,7 @@ class FineTuningDataset(BaseDataset):
                         if os.path.exists(npz_path):
                             abs_path = npz_path
 
-                assert abs_path is not None, f"no image / 画像がありません: {image_key}"
+                assert abs_path is not None, f"no image"
 
                 caption = img_md.get("caption")
                 tags = img_md.get("tags")
@@ -2280,16 +2276,16 @@ class FineTuningDataset(BaseDataset):
 
             if not npz_any:
                 use_npz_latents = False
-                logger.warning(f"npz file does not exist. ignore npz files / npzファイルが見つからないためnpzファイルを無視します")
+                logger.warning(f"npz file does not exist. ignore npz files")
             elif not npz_all:
                 use_npz_latents = False
                 logger.warning(
-                    f"some of npz file does not exist. ignore npz files / いくつかのnpzファイルが見つからないためnpzファイルを無視します"
+                    f"some of npz file does not exist. ignore npz files"
                 )
                 if flip_aug_in_subset:
-                    logger.warning("maybe no flipped files / 反転されたnpzファイルがないのかもしれません")
+                    logger.warning("maybe no flipped files")
         # else:
-        #   logger.info("npz files are not used with color_aug and/or random_crop / color_augまたはrandom_cropが指定されているためnpzファイルは使用されません")
+        #   logger.info("npz files are not used with color_aug and/or random_crop
 
         # check min/max bucket size
         sizes = set()
@@ -2306,12 +2302,12 @@ class FineTuningDataset(BaseDataset):
             if use_npz_latents:
                 use_npz_latents = False
                 logger.warning(
-                    f"npz files exist, but no bucket info in metadata. ignore npz files / メタデータにbucket情報がないためnpzファイルを無視します"
+                    f"npz files exist, but no bucket info in metadata. ignore npz files"
                 )
 
             assert (
                 resolution is not None
-            ), "if metadata doesn't have bucket info, resolution is required / メタデータにbucket情報がない場合はresolutionを指定してください"
+            ), "if metadata doesn't have bucket info, resolution is required"
 
             self.enable_bucket = enable_bucket
             if self.enable_bucket:
@@ -2324,19 +2320,19 @@ class FineTuningDataset(BaseDataset):
                 self.bucket_no_upscale = bucket_no_upscale
         else:
             if not enable_bucket:
-                logger.info("metadata has bucket info, enable bucketing / メタデータにbucket情報があるためbucketを有効にします")
-            logger.info("using bucket info in metadata / メタデータ内のbucket情報を使います")
+                logger.info("metadata has bucket info, enable bucketing")
+            logger.info("using bucket info in metadata")
             self.enable_bucket = True
 
             assert (
                 not bucket_no_upscale
-            ), "if metadata has bucket info, bucket reso is precalculated, so bucket_no_upscale cannot be used / メタデータ内にbucket情報がある場合はbucketの解像度は計算済みのため、bucket_no_upscaleは使えません"
+            ), "if metadata has bucket info, bucket reso is precalculated, so bucket_no_upscale cannot be used"
 
-            # bucket情報を初期化しておく、make_bucketsで再作成しない
+            
             self.bucket_manager = BucketManager(False, None, None, None, None)
             self.bucket_manager.set_predefined_resos(resos)
 
-        # npz情報をきれいにしておく
+        
         if not use_npz_latents:
             for image_info in self.image_data.values():
                 image_info.latents_npz = image_info.latents_npz_flipped = None
@@ -2392,7 +2388,7 @@ class ControlNetDataset(BaseDataset):
         for subset in subsets:
             assert (
                 not subset.random_crop
-            ), "random_crop is not supported in ControlNetDataset / random_cropはControlNetDatasetではサポートされていません"
+            ), "random_crop is not supported in ControlNetDataset"
             db_subset = DreamBoothSubset(
                 subset.image_dir,
                 False,
@@ -2440,7 +2436,7 @@ class ControlNetDataset(BaseDataset):
             resize_interpolation,
         )
 
-        # config_util等から参照される値をいれておく（若干微妙なのでなんとかしたい）
+        
         self.image_data = self.dreambooth_dataset_delegate.image_data
         self.batch_size = batch_size
         self.num_train_images = self.dreambooth_dataset_delegate.num_train_images
@@ -2484,10 +2480,10 @@ class ControlNetDataset(BaseDataset):
 
         assert (
             len(missing_imgs) == 0
-        ), f"missing conditioning data for {len(missing_imgs)} images / 制御用画像が見つかりませんでした: {missing_imgs}"
+        ), f"missing conditioning data for {len(missing_imgs)} images"
         assert (
             len(extra_imgs) == 0
-        ), f"extra conditioning data for {len(extra_imgs)} images / 余分な制御用画像があります: {extra_imgs}"
+        ), f"extra conditioning data for {len(extra_imgs)} images"
 
         self.conditioning_image_transforms = IMAGE_TRANSFORMS
 
@@ -2534,12 +2530,12 @@ class ControlNetDataset(BaseDataset):
             if self.dreambooth_dataset_delegate.enable_bucket:
                 assert (
                     cond_img.shape[0] == original_size_hw[0] and cond_img.shape[1] == original_size_hw[1]
-                ), f"size of conditioning image is not match / 画像サイズが合いません: {image_info.absolute_path}"
+                ), f"size of conditioning image is not match"
 
                 cond_img = resize_image(cond_img, original_size_hw[1], original_size_hw[0], target_size_hw[1], target_size_hw[0], self.resize_interpolation)
 
                 # TODO support random crop
-                # 現在サポートしているcropはrandomではなく中央のみ
+                
                 h, w = target_size_hw
                 ct = (cond_img.shape[0] - h) // 2
                 cl = (cond_img.shape[1] - w) // 2
@@ -2547,7 +2543,7 @@ class ControlNetDataset(BaseDataset):
             else:
                 # assert (
                 #     cond_img.shape[0] == self.height and cond_img.shape[1] == self.width
-                # ), f"image size is small / 画像サイズが小さいようです: {image_info.absolute_path}"
+                # ), f"image size is small
                 # resize to target
                 if cond_img.shape[0] != target_size_hw[0] or cond_img.shape[1] != target_size_hw[1]:
                     cond_img = resize_image(cond_img, cond_img.shape[0], cond_img.shape[1], target_size_hw[1], target_size_hw[0], self.resize_interpolation)
@@ -2591,9 +2587,7 @@ class DatasetGroup(torch.utils.data.ConcatDataset):
     #     dataset.make_buckets()
 
     def set_text_encoder_output_caching_strategy(self, strategy: TextEncoderOutputsCachingStrategy):
-        """
-        DataLoader is run in multiple processes, so we need to set the strategy manually.
-        """
+        """DataLoader is run in multiple processes, so we need to set the strategy manually."""
         for dataset in self.datasets:
             dataset.set_text_encoder_output_caching_strategy(strategy)
 
@@ -2673,7 +2667,7 @@ class DatasetGroup(torch.utils.data.ConcatDataset):
 
 
 def is_disk_cached_latents_is_expected(reso, npz_path: str, flip_aug: bool, alpha_mask: bool):
-    expected_latents_size = (reso[1] // 8, reso[0] // 8)  # bucket_resoはWxHなので注意
+    expected_latents_size = (reso[1] // 8, reso[0] // 8)  
 
     if not os.path.exists(npz_path):
         return False
@@ -2706,7 +2700,7 @@ def is_disk_cached_latents_is_expected(reso, npz_path: str, flip_aug: bool, alph
     return True
 
 
-# 戻り値は、latents_tensor, (original_size width, original_size height), (crop left, crop top)
+# (original_size width, original_size height), (crop left, crop top)
 # TODO update to use CachingStrategy
 # def load_latents_from_disk(
 #     npz_path,
@@ -2739,9 +2733,9 @@ def is_disk_cached_latents_is_expected(reso, npz_path: str, flip_aug: bool, alph
 
 
 def debug_dataset(train_dataset, show_input_ids=False):
-    logger.info(f"Total dataset length (steps) / データセットの長さ（ステップ数）: {len(train_dataset)}")
+    logger.info(f"Total dataset length (steps)")
     logger.info(
-        "`S` for next step, `E` for next epoch no. , Escape for exit. / Sキーで次のステップ、Eキーで次のエポック、Escキーで中断、終了します"
+        "`S` for next step, `E` for next epoch no. , Escape for exit."
     )
 
     epoch = 1
@@ -2835,7 +2829,7 @@ def glob_images(directory, base="*"):
             img_paths.extend(glob.glob(os.path.join(glob.escape(directory), base + ext)))
         else:
             img_paths.extend(glob.glob(glob.escape(os.path.join(directory, base + ext))))
-    img_paths = list(set(img_paths))  # 重複を排除
+    img_paths = list(set(img_paths))  
     img_paths.sort()
     return img_paths
 
@@ -2848,7 +2842,7 @@ def glob_images_pathlib(dir_path, recursive):
     else:
         for ext in IMAGE_EXTENSIONS:
             image_paths += list(dir_path.glob("*" + ext))
-    image_paths = list(set(image_paths))  # 重複を排除
+    image_paths = list(set(image_paths))  
     image_paths.sort()
     return image_paths
 
@@ -2883,8 +2877,7 @@ class MinimalDataset(BaseDataset):
         self.current_epoch = epoch
 
     def __getitem__(self, idx):
-        r"""
-        The subclass may have image_data for debug_dataset, which is a dict of ImageInfo objects.
+        r"""The subclass may have image_data for debug_dataset, which is a dict of ImageInfo objects.
 
         Returns: example like this:
 
@@ -2912,8 +2905,7 @@ class MinimalDataset(BaseDataset):
                 "image_keys": image_keys,   # for debug_dataset
                 "loss_weights": torch.ones(batch_size, dtype=torch.float32),
             }
-            return example
-        """
+            return example"""
         raise NotImplementedError
 
     def get_resolutions(self) -> List[Tuple[int, int]]:
@@ -2945,7 +2937,7 @@ def load_image(image_path, alpha=False):
         raise e
 
 
-# 画像を読み込む。戻り値はnumpy.ndarray,(original width, original height),(crop left, crop top, crop right, crop bottom)
+# (original height),(crop left, crop top, crop right, crop bottom)
 def trim_and_resize_if_required(
     random_crop: bool, image: np.ndarray, reso, resized_size: Tuple[int, int], resize_interpolation: Optional[str] = None
 ) -> Tuple[np.ndarray, Tuple[int, int], Tuple[int, int, int, int]]:
@@ -2968,7 +2960,7 @@ def trim_and_resize_if_required(
         # logger.info(f"h {trim_size} {p})
         image = image[p : p + reso[1]]
 
-    # random cropの場合のcropされた値をどうcrop left/topに反映するべきか全くアイデアがない
+    
     # I have no idea how to reflect the cropped value in crop left/top in the case of random crop
 
     crop_ltrb = BucketManager.get_crop_ltrb(reso, original_size)
@@ -2981,23 +2973,21 @@ def trim_and_resize_if_required(
 def load_images_and_masks_for_caching(
     image_infos: List[ImageInfo], use_alpha_mask: bool, random_crop: bool
 ) -> Tuple[torch.Tensor, List[np.ndarray], List[Tuple[int, int]], List[Tuple[int, int, int, int]]]:
-    r"""
-    requires image_infos to have: [absolute_path or image], bucket_reso, resized_size
+    r"""requires image_infos to have: [absolute_path or image], bucket_reso, resized_size
 
     returns: image_tensor, alpha_masks, original_sizes, crop_ltrbs
 
     image_tensor: torch.Tensor = torch.Size([B, 3, H, W]), ...], normalized to [-1, 1]
     alpha_masks: List[np.ndarray] = [np.ndarray([H, W]), ...], normalized to [0, 1]
     original_sizes: List[Tuple[int, int]] = [(W, H), ...]
-    crop_ltrbs: List[Tuple[int, int, int, int]] = [(L, T, R, B), ...]
-    """
+    crop_ltrbs: List[Tuple[int, int, int, int]] = [(L, T, R, B), ...]"""
     images: List[torch.Tensor] = []
     alpha_masks: List[np.ndarray] = []
     original_sizes: List[Tuple[int, int]] = []
     crop_ltrbs: List[Tuple[int, int, int, int]] = []
     for info in image_infos:
         image = load_image(info.absolute_path, use_alpha_mask) if info.image is None else np.array(info.image, np.uint8)
-        # TODO 画像のメタデータが壊れていて、メタデータから割り当てたbucketと実際の画像サイズが一致しない場合があるのでチェック追加要
+        
         image, original_size, crop_ltrb = trim_and_resize_if_required(random_crop, image, info.bucket_reso, info.resized_size, resize_interpolation=info.resize_interpolation)
 
         original_sizes.append(original_size)
@@ -3025,20 +3015,18 @@ def load_images_and_masks_for_caching(
 def cache_batch_latents(
     vae: AutoencoderKL, cache_to_disk: bool, image_infos: List[ImageInfo], flip_aug: bool, use_alpha_mask: bool, random_crop: bool
 ) -> None:
-    r"""
-    requires image_infos to have: absolute_path, bucket_reso, resized_size, latents_npz
+    r"""requires image_infos to have: absolute_path, bucket_reso, resized_size, latents_npz
     optionally requires image_infos to have: image
     if cache_to_disk is True, set info.latents_npz
         flipped latents is also saved if flip_aug is True
     if cache_to_disk is False, set info.latents
         latents_flipped is also set if flip_aug is True
-    latents_original_size and latents_crop_ltrb are also set
-    """
+    latents_original_size and latents_crop_ltrb are also set"""
     images = []
     alpha_masks: List[np.ndarray] = []
     for info in image_infos:
         image = load_image(info.absolute_path, use_alpha_mask) if info.image is None else np.array(info.image, np.uint8)
-        # TODO 画像のメタデータが壊れていて、メタデータから割り当てたbucketと実際の画像サイズが一致しない場合があるのでチェック追加要
+        
         image, original_size, crop_ltrb = trim_and_resize_if_required(random_crop, image, info.bucket_reso, info.resized_size, resize_interpolation=info.resize_interpolation)
 
         info.latents_original_size = original_size
@@ -3115,7 +3103,7 @@ def cache_batch_text_encoder_outputs(
             dtype,
         )
 
-        # ここでcpuに移動しておかないと、上書きされてしまう
+        
         b_hidden_state1 = b_hidden_state1.detach().to("cpu")  # b,n*75+2,768
         b_hidden_state2 = b_hidden_state2.detach().to("cpu")  # b,n*75+2,1280
         b_pool2 = b_pool2.detach().to("cpu")  # b,1280
@@ -3176,12 +3164,10 @@ def load_text_encoder_outputs_from_disk(npz_path):
 
 # endregion
 
-# region モジュール入れ替え部
-"""
-高速化のためのモジュール入れ替え
-"""
 
-# FlashAttentionを使うCrossAttention
+""""""
+
+
 # based on https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/memory_efficient_attention_pytorch/flash_attention.py
 # LICENSE MIT https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/LICENSE
 
@@ -3302,7 +3288,7 @@ def get_git_revision_hash() -> str:
 #     try:
 #         import xformers.ops
 #     except ImportError:
-#         raise ImportError("No xformers / xformersがインストールされていないようです")
+#         raise ImportError("No xformers
 
 #     def forward_xformers(self, x, context=None, mask=None):
 #         h = self.heads
@@ -3328,7 +3314,7 @@ def get_git_revision_hash() -> str:
 #         q = q.contiguous()
 #         k = k.contiguous()
 #         v = v.contiguous()
-#         out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)  # 最適なのを選んでくれる
+#         out = xformers.ops.memory_efficient_attention(q, k, v
 
 #         out = rearrange(out, "b n h d -> b n (h d)", h=h)
 
@@ -3348,7 +3334,7 @@ def replace_unet_modules(unet: UNet2DConditionModel, mem_eff_attn, xformers, sdp
         try:
             import xformers.ops
         except ImportError:
-            raise ImportError("No xformers / xformersがインストールされていないようです")
+            raise ImportError("No xformers")
 
         unet.set_use_memory_efficient_attention(True, False)
     elif sdpa:
@@ -3356,58 +3342,10 @@ def replace_unet_modules(unet: UNet2DConditionModel, mem_eff_attn, xformers, sdp
         unet.set_use_sdpa(True)
 
 
-"""
-def replace_vae_modules(vae: diffusers.models.AutoencoderKL, mem_eff_attn, xformers):
-    # vae is not used currently, but it is here for future use
-    if mem_eff_attn:
-        replace_vae_attn_to_memory_efficient()
-    elif xformers:
-        # とりあえずDiffusersのxformersを使う。AttentionがあるのはMidBlockのみ
-        logger.info("Use Diffusers xformers for VAE")
-        vae.encoder.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)
-        vae.decoder.mid_block.attentions[0].set_use_memory_efficient_attention_xformers(True)
-
-
-def replace_vae_attn_to_memory_efficient():
-    logger.info("AttentionBlock.forward has been replaced to FlashAttention (not xformers)")
-    flash_func = FlashAttentionFunction
-
-    def forward_flash_attn(self, hidden_states):
-        logger.info("forward_flash_attn")
-        q_bucket_size = 512
-        k_bucket_size = 1024
-
-        residual = hidden_states
-        batch, channel, height, width = hidden_states.shape
-
-        # norm
-        hidden_states = self.group_norm(hidden_states)
-
-        hidden_states = hidden_states.view(batch, channel, height * width).transpose(1, 2)
-
-        # proj to q, k, v
-        query_proj = self.query(hidden_states)
-        key_proj = self.key(hidden_states)
-        value_proj = self.value(hidden_states)
-
-        query_proj, key_proj, value_proj = map(
-            lambda t: rearrange(t, "b n (h d) -> b h n d", h=self.num_heads), (query_proj, key_proj, value_proj)
-        )
-
-        out = flash_func.apply(query_proj, key_proj, value_proj, None, False, q_bucket_size, k_bucket_size)
-
-        out = rearrange(out, "b h n d -> b n (h d)")
-
-        # compute next hidden_states
-        hidden_states = self.proj_attn(hidden_states)
-        hidden_states = hidden_states.transpose(-1, -2).reshape(batch, channel, height, width)
-
-        # res connect and rescale
-        hidden_states = (hidden_states + residual) / self.rescale_output_factor
+"""self.rescale_output_factor
         return hidden_states
 
-    diffusers.models.attention.AttentionBlock.forward = forward_flash_attn
-"""
+    diffusers.models.attention.AttentionBlock.forward = forward_flash_attn"""
 
 
 # endregion
@@ -3419,8 +3357,7 @@ def replace_vae_attn_to_memory_efficient():
 def load_metadata_from_safetensors(safetensors_file: str) -> dict:
     """r
     This method locks the file. see https://github.com/huggingface/safetensors/issues/164
-    If the file isn't .safetensors or doesn't have metadata, return empty dict.
-    """
+    If the file isn't .safetensors or doesn't have metadata, return empty dict."""
     if os.path.splitext(safetensors_file)[1] != ".safetensors":
         return {}
 
@@ -3523,22 +3460,22 @@ def get_sai_model_spec(
 def add_sd_models_arguments(parser: argparse.ArgumentParser):
     # for pretrained models
     parser.add_argument(
-        "--v2", action="store_true", help="load Stable Diffusion v2.0 model / Stable Diffusion 2.0のモデルを読み込む"
+        "--v2", action="store_true", help="load Stable Diffusion v2.0 model"
     )
     parser.add_argument(
-        "--v_parameterization", action="store_true", help="enable v-parameterization training / v-parameterization学習を有効にする"
+        "--v_parameterization", action="store_true", help="enable v-parameterization training"
     )
     parser.add_argument(
         "--pretrained_model_name_or_path",
         type=str,
         default=None,
-        help="pretrained model to train, directory to Diffusers model or StableDiffusion checkpoint / 学習元モデル、Diffusers形式モデルのディレクトリまたはStableDiffusionのckptファイル",
+        help="pretrained model to train, directory to Diffusers model or StableDiffusion checkpoint",
     )
     parser.add_argument(
         "--tokenizer_cache_dir",
         type=str,
         default=None,
-        help="directory for caching Tokenizer (for offline training) / Tokenizerをキャッシュするディレクトリ（ネット接続なしでの学習のため）",
+        help="directory for caching Tokenizer (for offline training)",
     )
 
 
@@ -3561,9 +3498,9 @@ def add_optimizer_arguments(parser: argparse.ArgumentParser):
         "--optimizer_type",
         type=str,
         default="",
-        help="Optimizer to use / オプティマイザの種類: AdamW (default), AdamW8bit, PagedAdamW, PagedAdamW8bit, PagedAdamW32bit, "
-        "Lion8bit, PagedLion8bit, Lion, SGDNesterov, SGDNesterov8bit, "
-        "DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, DAdaptLion, DAdaptSGD, "
+        help="Optimizer to use"
+        "Lion8bit, PagedLion8bit, Lion, SGDNesterov, SGDNesterov8bit,"
+        "DAdaptation(DAdaptAdamPreprint), DAdaptAdaGrad, DAdaptAdam, DAdaptAdan, DAdaptAdanIP, DAdaptLion, DAdaptSGD,"
         "AdaFactor. "
         "Also, you can use any optimizer by specifying the full path to the class, like 'bitsandbytes.optim.AdEMAMix8bit' or 'bitsandbytes.optim.PagedAdEMAMix8bit'.",
     )
@@ -3572,20 +3509,20 @@ def add_optimizer_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--use_8bit_adam",
         action="store_true",
-        help="use 8bit AdamW optimizer (requires bitsandbytes) / 8bit Adamオプティマイザを使う（bitsandbytesのインストールが必要）",
+        help="use 8bit AdamW optimizer (requires bitsandbytes)",
     )
     parser.add_argument(
         "--use_lion_optimizer",
         action="store_true",
-        help="use Lion optimizer (requires lion-pytorch) / Lionオプティマイザを使う（ lion-pytorch のインストールが必要）",
+        help="use Lion optimizer (requires lion-pytorch)",
     )
 
-    parser.add_argument("--learning_rate", type=float, default=2.0e-6, help="learning rate / 学習率")
+    parser.add_argument("--learning_rate", type=float, default=2.0e-6, help="learning rate")
     parser.add_argument(
         "--max_grad_norm",
         default=1.0,
         type=float,
-        help="Max gradient norm, 0 for no clipping / 勾配正規化の最大norm、0でclippingを行わない",
+        help="Max gradient norm, 0 for no clipping",
     )
 
     parser.add_argument(
@@ -3593,13 +3530,13 @@ def add_optimizer_arguments(parser: argparse.ArgumentParser):
         type=str,
         default=None,
         nargs="*",
-        help='additional arguments for optimizer (like "weight_decay=0.01 betas=0.9,0.999 ...") / オプティマイザの追加引数（例： "weight_decay=0.01 betas=0.9,0.999 ..."）',
+        help='additional arguments for optimizer (like "weight_decay=0.01 betas=0.9,0.999 ...")',
     )
 
     # parser.add_argument(
     #     "--optimizer_schedulefree_wrapper",
     #     action="store_true",
-    #     help="use schedulefree_wrapper any optimizer / 任意のオプティマイザにschedulefree_wrapperを使用",
+    #     help="use schedulefree_wrapper any optimizer
     # )
 
     # parser.add_argument(
@@ -3607,193 +3544,193 @@ def add_optimizer_arguments(parser: argparse.ArgumentParser):
     #     type=str,
     #     default=None,
     #     nargs="*",
-    #     help='additional arguments for schedulefree_wrapper (like "momentum=0.9 weight_decay_at_y=0.1 ...") / オプティマイザの追加引数（例： "momentum=0.9 weight_decay_at_y=0.1 ..."）',
+    #     help='additional arguments for schedulefree_wrapper (like "momentum=0.9 weight_decay_at_y=0.1 ...")
     # )
 
-    parser.add_argument("--lr_scheduler_type", type=str, default="", help="custom scheduler module / 使用するスケジューラ")
+    parser.add_argument("--lr_scheduler_type", type=str, default="", help="custom scheduler module")
     parser.add_argument(
         "--lr_scheduler_args",
         type=str,
         default=None,
         nargs="*",
-        help='additional arguments for scheduler (like "T_max=100") / スケジューラの追加引数（例： "T_max100"）',
+        help='additional arguments for scheduler (like "T_max=100")',
     )
 
     parser.add_argument(
         "--lr_scheduler",
         type=str,
         default="constant",
-        help="scheduler to use for learning rate / 学習率のスケジューラ: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor",
+        help="scheduler to use for learning rate",
     )
     parser.add_argument(
         "--lr_warmup_steps",
         type=int_or_float,
         default=0,
         help="Int number of steps for the warmup in the lr scheduler (default is 0) or float with ratio of train steps"
-        " / 学習率のスケジューラをウォームアップするステップ数（デフォルト0）、または学習ステップの比率（1未満のfloat値の場合）",
+        "",
     )
     parser.add_argument(
         "--lr_decay_steps",
         type=int_or_float,
         default=0,
         help="Int number of steps for the decay in the lr scheduler (default is 0) or float (<1) with ratio of train steps"
-        " / 学習率のスケジューラを減衰させるステップ数（デフォルト0）、または学習ステップの比率（1未満のfloat値の場合）",
+        "",
     )
     parser.add_argument(
         "--lr_scheduler_num_cycles",
         type=int,
         default=1,
-        help="Number of restarts for cosine scheduler with restarts / cosine with restartsスケジューラでのリスタート回数",
+        help="Number of restarts for cosine scheduler with restarts",
     )
     parser.add_argument(
         "--lr_scheduler_power",
         type=float,
         default=1,
-        help="Polynomial power for polynomial scheduler / polynomialスケジューラでのpolynomial power",
+        help="Polynomial power for polynomial scheduler",
     )
     parser.add_argument(
         "--fused_backward_pass",
         action="store_true",
         help="Combines backward pass and optimizer step to reduce VRAM usage. Only available in SDXL, SD3 and FLUX"
-        " / バックワードパスとオプティマイザステップを組み合わせてVRAMの使用量を削減します。SDXL、SD3、FLUXでのみ利用可能",
+        "",
     )
     parser.add_argument(
         "--lr_scheduler_timescale",
         type=int,
         default=None,
         help="Inverse sqrt timescale for inverse sqrt scheduler,defaults to `num_warmup_steps`"
-        + " / 逆平方根スケジューラのタイムスケール、デフォルトは`num_warmup_steps`",
+        + "",
     )
     parser.add_argument(
         "--lr_scheduler_min_lr_ratio",
         type=float,
         default=None,
         help="The minimum learning rate as a ratio of the initial learning rate for cosine with min lr scheduler and warmup decay scheduler"
-        + " / 初期学習率の比率としての最小学習率を指定する、cosine with min lr と warmup decay スケジューラ で有効",
+        + "",
     )
 
 
 def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: bool):
     parser.add_argument(
-        "--output_dir", type=str, default=None, help="directory to output trained model / 学習後のモデル出力先ディレクトリ"
+        "--output_dir", type=str, default=None, help="directory to output trained model"
     )
     parser.add_argument(
-        "--output_name", type=str, default=None, help="base name of trained model file / 学習後のモデルの拡張子を除くファイル名"
+        "--output_name", type=str, default=None, help="base name of trained model file"
     )
     parser.add_argument(
         "--huggingface_repo_id",
         type=str,
         default=None,
-        help="huggingface repo name to upload / huggingfaceにアップロードするリポジトリ名",
+        help="huggingface repo name to upload",
     )
     parser.add_argument(
         "--huggingface_repo_type",
         type=str,
         default=None,
-        help="huggingface repo type to upload / huggingfaceにアップロードするリポジトリの種類",
+        help="huggingface repo type to upload",
     )
     parser.add_argument(
         "--huggingface_path_in_repo",
         type=str,
         default=None,
-        help="huggingface model path to upload files / huggingfaceにアップロードするファイルのパス",
+        help="huggingface model path to upload files",
     )
-    parser.add_argument("--huggingface_token", type=str, default=None, help="huggingface token / huggingfaceのトークン")
+    parser.add_argument("--huggingface_token", type=str, default=None, help="huggingface token")
     parser.add_argument(
         "--huggingface_repo_visibility",
         type=str,
         default=None,
-        help="huggingface repository visibility ('public' for public, 'private' or None for private) / huggingfaceにアップロードするリポジトリの公開設定（'public'で公開、'private'またはNoneで非公開）",
+        help="huggingface repository visibility ('public' for public, 'private' or None for private)",
     )
     parser.add_argument(
-        "--save_state_to_huggingface", action="store_true", help="save state to huggingface / huggingfaceにstateを保存する"
+        "--save_state_to_huggingface", action="store_true", help="save state to huggingface"
     )
     parser.add_argument(
         "--resume_from_huggingface",
         action="store_true",
-        help="resume from huggingface (ex: --resume {repo_id}/{path_in_repo}:{revision}:{repo_type}) / huggingfaceから学習を再開する(例: --resume {repo_id}/{path_in_repo}:{revision}:{repo_type})",
+        help="resume from huggingface (ex: --resume {repo_id}/{path_in_repo}:{revision}:{repo_type})",
     )
     parser.add_argument(
         "--async_upload",
         action="store_true",
-        help="upload to huggingface asynchronously / huggingfaceに非同期でアップロードする",
+        help="upload to huggingface asynchronously",
     )
     parser.add_argument(
         "--save_precision",
         type=str,
         default=None,
         choices=[None, "float", "fp16", "bf16"],
-        help="precision in saving / 保存時に精度を変更して保存する",
+        help="precision in saving",
     )
     parser.add_argument(
         "--save_every_n_epochs",
         type=int,
         default=None,
-        help="save checkpoint every N epochs / 学習中のモデルを指定エポックごとに保存する",
+        help="save checkpoint every N epochs",
     )
     parser.add_argument(
         "--save_every_n_steps",
         type=int,
         default=None,
-        help="save checkpoint every N steps / 学習中のモデルを指定ステップごとに保存する",
+        help="save checkpoint every N steps",
     )
     parser.add_argument(
         "--save_n_epoch_ratio",
         type=int,
         default=None,
-        help="save checkpoint N epoch ratio (for example 5 means save at least 5 files total) / 学習中のモデルを指定のエポック割合で保存する（たとえば5を指定すると最低5個のファイルが保存される）",
+        help="save checkpoint N epoch ratio (for example 5 means save at least 5 files total)",
     )
     parser.add_argument(
         "--save_last_n_epochs",
         type=int,
         default=None,
-        help="save last N checkpoints when saving every N epochs (remove older checkpoints) / 指定エポックごとにモデルを保存するとき最大Nエポック保存する（古いチェックポイントは削除する）",
+        help="save last N checkpoints when saving every N epochs (remove older checkpoints)",
     )
     parser.add_argument(
         "--save_last_n_epochs_state",
         type=int,
         default=None,
-        help="save last N checkpoints of state (overrides the value of --save_last_n_epochs)/ 最大Nエポックstateを保存する（--save_last_n_epochsの指定を上書きする）",
+        help="save last N checkpoints of state (overrides the value of --save_last_n_epochs)",
     )
     parser.add_argument(
         "--save_last_n_steps",
         type=int,
         default=None,
-        help="save checkpoints until N steps elapsed (remove older checkpoints if N steps elapsed) / 指定ステップごとにモデルを保存するとき、このステップ数経過するまで保存する（このステップ数経過したら削除する）",
+        help="save checkpoints until N steps elapsed (remove older checkpoints if N steps elapsed)",
     )
     parser.add_argument(
         "--save_last_n_steps_state",
         type=int,
         default=None,
-        help="save states until N steps elapsed (remove older states if N steps elapsed, overrides --save_last_n_steps) / 指定ステップごとにstateを保存するとき、このステップ数経過するまで保存する（このステップ数経過したら削除する。--save_last_n_stepsを上書きする）",
+        help="save states until N steps elapsed (remove older states if N steps elapsed, overrides --save_last_n_steps)",
     )
     parser.add_argument(
         "--save_state",
         action="store_true",
-        help="save training state additionally (including optimizer states etc.) when saving model / optimizerなど学習状態も含めたstateをモデル保存時に追加で保存する",
+        help="save training state additionally (including optimizer states etc.) when saving model",
     )
     parser.add_argument(
         "--save_state_on_train_end",
         action="store_true",
-        help="save training state (including optimizer states etc.) on train end / optimizerなど学習状態も含めたstateを学習完了時に保存する",
+        help="save training state (including optimizer states etc.) on train end",
     )
-    parser.add_argument("--resume", type=str, default=None, help="saved state to resume training / 学習再開するモデルのstate")
+    parser.add_argument("--resume", type=str, default=None, help="saved state to resume training")
 
-    parser.add_argument("--train_batch_size", type=int, default=1, help="batch size for training / 学習時のバッチサイズ")
+    parser.add_argument("--train_batch_size", type=int, default=1, help="batch size for training")
     parser.add_argument(
         "--max_token_length",
         type=int,
         default=None,
         choices=[None, 150, 225],
-        help="max token length of text encoder (default for 75, 150 or 225) / text encoderのトークンの最大長（未指定で75、150または225が指定可）",
+        help="max token length of text encoder (default for 75, 150 or 225)",
     )
     parser.add_argument(
         "--mem_eff_attn",
         action="store_true",
-        help="use memory efficient attention for CrossAttention / CrossAttentionに省メモリ版attentionを使う",
+        help="use memory efficient attention for CrossAttention",
     )
     parser.add_argument(
-        "--torch_compile", action="store_true", help="use torch.compile (requires PyTorch 2.0) / torch.compile を使う"
+        "--torch_compile", action="store_true", help="use torch.compile (requires PyTorch 2.0)"
     )
     parser.add_argument(
         "--dynamo_backend",
@@ -3816,197 +3753,197 @@ def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: 
             "ipex",
             "tvm",
         ],
-        help="dynamo backend type (default is inductor) / dynamoのbackendの種類（デフォルトは inductor）",
+        help="dynamo backend type (default is inductor)",
     )
-    parser.add_argument("--xformers", action="store_true", help="use xformers for CrossAttention / CrossAttentionにxformersを使う")
+    parser.add_argument("--xformers", action="store_true", help="use xformers for CrossAttention")
     parser.add_argument(
         "--sdpa",
         action="store_true",
-        help="use sdpa for CrossAttention (requires PyTorch 2.0) / CrossAttentionにsdpaを使う（PyTorch 2.0が必要）",
+        help="use sdpa for CrossAttention (requires PyTorch 2.0)",
     )
     parser.add_argument(
         "--vae",
         type=str,
         default=None,
-        help="path to checkpoint of vae to replace / VAEを入れ替える場合、VAEのcheckpointファイルまたはディレクトリ",
+        help="path to checkpoint of vae to replace",
     )
 
-    parser.add_argument("--max_train_steps", type=int, default=1600, help="training steps / 学習ステップ数")
+    parser.add_argument("--max_train_steps", type=int, default=1600, help="training steps")
     parser.add_argument(
         "--max_train_epochs",
         type=int,
         default=None,
-        help="training epochs (overrides max_train_steps) / 学習エポック数（max_train_stepsを上書きします）",
+        help="training epochs (overrides max_train_steps)",
     )
     parser.add_argument(
         "--max_data_loader_n_workers",
         type=int,
         default=8,
-        help="max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading) / DataLoaderの最大プロセス数（小さい値ではメインメモリの使用量が減りエポック間の待ち時間が減りますが、データ読み込みは遅くなります）",
+        help="max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading)",
     )
     parser.add_argument(
         "--persistent_data_loader_workers",
         action="store_true",
-        help="persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory) / DataLoader のワーカーを持続させる (エポック間の時間差を少なくするのに有効だが、より多くのメモリを消費する可能性がある)",
+        help="persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)",
     )
-    parser.add_argument("--seed", type=int, default=None, help="random seed for training / 学習時の乱数のseed")
+    parser.add_argument("--seed", type=int, default=None, help="random seed for training")
     parser.add_argument(
-        "--gradient_checkpointing", action="store_true", help="enable gradient checkpointing / gradient checkpointingを有効にする"
+        "--gradient_checkpointing", action="store_true", help="enable gradient checkpointing"
     )
     parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
         default=1,
-        help="Number of updates steps to accumulate before performing a backward/update pass / 学習時に逆伝播をする前に勾配を合計するステップ数",
+        help="Number of updates steps to accumulate before performing a backward/update pass",
     )
     parser.add_argument(
         "--mixed_precision",
         type=str,
         default="no",
         choices=["no", "fp16", "bf16"],
-        help="use mixed precision / 混合精度を使う場合、その精度",
+        help="use mixed precision",
     )
-    parser.add_argument("--full_fp16", action="store_true", help="fp16 training including gradients / 勾配も含めてfp16で学習する")
+    parser.add_argument("--full_fp16", action="store_true", help="fp16 training including gradients")
     parser.add_argument(
-        "--full_bf16", action="store_true", help="bf16 training including gradients / 勾配も含めてbf16で学習する"
+        "--full_bf16", action="store_true", help="bf16 training including gradients"
     )  # TODO move to SDXL training, because it is not supported by SD1/2
-    parser.add_argument("--fp8_base", action="store_true", help="use fp8 for base model / base modelにfp8を使う")
+    parser.add_argument("--fp8_base", action="store_true", help="use fp8 for base model")
 
     parser.add_argument(
         "--ddp_timeout",
         type=int,
         default=None,
-        help="DDP timeout (min, None for default of accelerate) / DDPのタイムアウト（分、Noneでaccelerateのデフォルト）",
+        help="DDP timeout (min, None for default of accelerate)",
     )
     parser.add_argument(
         "--ddp_gradient_as_bucket_view",
         action="store_true",
-        help="enable gradient_as_bucket_view for DDP / DDPでgradient_as_bucket_viewを有効にする",
+        help="enable gradient_as_bucket_view for DDP",
     )
     parser.add_argument(
         "--ddp_static_graph",
         action="store_true",
-        help="enable static_graph for DDP / DDPでstatic_graphを有効にする",
+        help="enable static_graph for DDP",
     )
     parser.add_argument(
         "--clip_skip",
         type=int,
         default=None,
-        help="use output of nth layer from back of text encoder (n>=1) / text encoderの後ろからn番目の層の出力を用いる（nは1以上）",
+        help="use output of nth layer from back of text encoder (n>=1)",
     )
     parser.add_argument(
         "--logging_dir",
         type=str,
         default=None,
-        help="enable logging and output TensorBoard log to this directory / ログ出力を有効にしてこのディレクトリにTensorBoard用のログを出力する",
+        help="enable logging and output TensorBoard log to this directory",
     )
     parser.add_argument(
         "--log_with",
         type=str,
         default=None,
         choices=["tensorboard", "wandb", "all"],
-        help="what logging tool(s) to use (if 'all', TensorBoard and WandB are both used) / ログ出力に使用するツール (allを指定するとTensorBoardとWandBの両方が使用される)",
+        help="what logging tool(s) to use (if 'all', TensorBoard and WandB are both used)",
     )
     parser.add_argument(
-        "--log_prefix", type=str, default=None, help="add prefix for each log directory / ログディレクトリ名の先頭に追加する文字列"
+        "--log_prefix", type=str, default=None, help="add prefix for each log directory"
     )
     parser.add_argument(
         "--log_tracker_name",
         type=str,
         default=None,
-        help="name of tracker to use for logging, default is script-specific default name / ログ出力に使用するtrackerの名前、省略時はスクリプトごとのデフォルト名",
+        help="name of tracker to use for logging, default is script-specific default name",
     )
     parser.add_argument(
         "--wandb_run_name",
         type=str,
         default=None,
-        help="The name of the specific wandb session / wandb ログに表示される特定の実行の名前",
+        help="The name of the specific wandb session",
     )
     parser.add_argument(
         "--log_tracker_config",
         type=str,
         default=None,
-        help="path to tracker config file to use for logging / ログ出力に使用するtrackerの設定ファイルのパス",
+        help="path to tracker config file to use for logging",
     )
     parser.add_argument(
         "--wandb_api_key",
         type=str,
         default=None,
-        help="specify WandB API key to log in before starting training (optional). / WandB APIキーを指定して学習開始前にログインする（オプション）",
+        help="specify WandB API key to log in before starting training (optional).",
     )
-    parser.add_argument("--log_config", action="store_true", help="log training configuration / 学習設定をログに出力する")
+    parser.add_argument("--log_config", action="store_true", help="log training configuration")
 
     parser.add_argument(
         "--noise_offset",
         type=float,
         default=None,
-        help="enable noise offset with this value (if enabled, around 0.1 is recommended) / Noise offsetを有効にしてこの値を設定する（有効にする場合は0.1程度を推奨）",
+        help="enable noise offset with this value (if enabled, around 0.1 is recommended)",
     )
     parser.add_argument(
         "--noise_offset_random_strength",
         action="store_true",
-        help="use random strength between 0~noise_offset for noise offset. / noise offsetにおいて、0からnoise_offsetの間でランダムな強度を使用します。",
+        help="use random strength between 0~noise_offset for noise offset.",
     )
     parser.add_argument(
         "--multires_noise_iterations",
         type=int,
         default=None,
-        help="enable multires noise with this number of iterations (if enabled, around 6-10 is recommended) / Multires noiseを有効にしてこのイテレーション数を設定する（有効にする場合は6-10程度を推奨）",
+        help="enable multires noise with this number of iterations (if enabled, around 6-10 is recommended)",
     )
     parser.add_argument(
         "--ip_noise_gamma",
         type=float,
         default=None,
-        help="enable input perturbation noise. used for regularization. recommended value: around 0.1 (from arxiv.org/abs/2301.11706) "
-        + "/  input perturbation noiseを有効にする。正則化に使用される。推奨値: 0.1程度 (arxiv.org/abs/2301.11706 より)",
+        help="enable input perturbation noise. used for regularization. recommended value: around 0.1 (from arxiv.org/abs/2301.11706)"
+        + "",
     )
     parser.add_argument(
         "--ip_noise_gamma_random_strength",
         action="store_true",
         help="Use random strength between 0~ip_noise_gamma for input perturbation noise."
-        + "/ input perturbation noiseにおいて、0からip_noise_gammaの間でランダムな強度を使用します。",
+        + "",
     )
     # parser.add_argument(
     #     "--perlin_noise",
     #     type=int,
     #     default=None,
-    #     help="enable perlin noise and set the octaves / perlin noiseを有効にしてoctavesをこの値に設定する",
+    #     help="enable perlin noise and set the octaves
     # )
     parser.add_argument(
         "--multires_noise_discount",
         type=float,
         default=0.3,
-        help="set discount value for multires noise (has no effect without --multires_noise_iterations) / Multires noiseのdiscount値を設定する（--multires_noise_iterations指定時のみ有効）",
+        help="set discount value for multires noise (has no effect without --multires_noise_iterations)",
     )
     parser.add_argument(
         "--adaptive_noise_scale",
         type=float,
         default=None,
-        help="add `latent mean absolute value * this value` to noise_offset (disabled if None, default) / latentの平均値の絶対値 * この値をnoise_offsetに加算する（Noneの場合は無効、デフォルト）",
+        help="add `latent mean absolute value * this value` to noise_offset (disabled if None, default)",
     )
     parser.add_argument(
         "--zero_terminal_snr",
         action="store_true",
-        help="fix noise scheduler betas to enforce zero terminal SNR / noise schedulerのbetasを修正して、zero terminal SNRを強制する",
+        help="fix noise scheduler betas to enforce zero terminal SNR",
     )
     parser.add_argument(
         "--min_timestep",
         type=int,
         default=None,
-        help="set minimum time step for U-Net training (0~999, default is 0) / U-Net学習時のtime stepの最小値を設定する（0~999で指定、省略時はデフォルト値(0)） ",
+        help="set minimum time step for U-Net training (0~999, default is 0)",
     )
     parser.add_argument(
         "--max_timestep",
         type=int,
         default=None,
-        help="set maximum time step for U-Net training (1~1000, default is 1000) / U-Net学習時のtime stepの最大値を設定する（1~1000で指定、省略時はデフォルト値(1000)）",
+        help="set maximum time step for U-Net training (1~1000, default is 1000)",
     )
     parser.add_argument(
         "--loss_type",
         type=str,
         default="l2",
         choices=["l1", "l2", "huber", "smooth_l1"],
-        help="The type of loss function to use (L1, L2, Huber, or smooth L1), default is L2 / 使用する損失関数の種類（L1、L2、Huber、またはsmooth L1）、デフォルトはL2",
+        help="The type of loss function to use (L1, L2, Huber, or smooth L1), default is L2",
     )
     parser.add_argument(
         "--huber_schedule",
@@ -4014,14 +3951,14 @@ def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: 
         default="snr",
         choices=["constant", "exponential", "snr"],
         help="The scheduling method for Huber loss (constant, exponential, or SNR-based). Only used when loss_type is 'huber' or 'smooth_l1'. default is snr"
-        + " / Huber損失のスケジューリング方法（constant、exponential、またはSNRベース）。loss_typeが'huber'または'smooth_l1'の場合に有効、デフォルトは snr",
+        + "",
     )
     parser.add_argument(
         "--huber_c",
         type=float,
         default=0.1,
         help="The Huber loss decay parameter. Only used if one of the huber loss modes (huber or smooth l1) is selected with loss_type. default is 0.1"
-        " / Huber損失の減衰パラメータ。loss_typeがhuberまたはsmooth l1の場合に有効。デフォルトは0.1",
+        "",
     )
 
     parser.add_argument(
@@ -4029,41 +3966,41 @@ def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: 
         type=float,
         default=1.0,
         help="The Huber loss scale parameter. Only used if one of the huber loss modes (huber or smooth l1) is selected with loss_type. default is 1.0"
-        " / Huber損失のスケールパラメータ。loss_typeがhuberまたはsmooth l1の場合に有効。デフォルトは1.0",
+        "",
     )
 
     parser.add_argument(
         "--lowram",
         action="store_true",
-        help="enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle) / メインメモリが少ない環境向け最適化を有効にする。たとえばVRAMにモデルを読み込む等（ColabやKaggleなどRAMに比べてVRAMが多い環境向け）",
+        help="enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle)",
     )
     parser.add_argument(
         "--highvram",
         action="store_true",
         help="disable low VRAM optimization. e.g. do not clear CUDA cache after each latent caching (for machines which have bigger VRAM) "
-        + "/ VRAMが少ない環境向け最適化を無効にする。たとえば各latentのキャッシュ後のCUDAキャッシュクリアを行わない等（VRAMが多い環境向け）",
+        + "",
     )
 
     parser.add_argument(
         "--sample_every_n_steps",
         type=int,
         default=None,
-        help="generate sample images every N steps / 学習中のモデルで指定ステップごとにサンプル出力する",
+        help="generate sample images every N steps",
     )
     parser.add_argument(
-        "--sample_at_first", action="store_true", help="generate sample images before training / 学習前にサンプル出力する"
+        "--sample_at_first", action="store_true", help="generate sample images before training"
     )
     parser.add_argument(
         "--sample_every_n_epochs",
         type=int,
         default=None,
-        help="generate sample images every N epochs (overwrites n_steps) / 学習中のモデルで指定エポックごとにサンプル出力する（ステップ数指定を上書きします）",
+        help="generate sample images every N epochs (overwrites n_steps)",
     )
     parser.add_argument(
         "--sample_prompts",
         type=str,
         default=None,
-        help="file for prompts to generate sample images / 学習中モデルのサンプル出力用プロンプトのファイル",
+        help="file for prompts to generate sample images",
     )
     parser.add_argument(
         "--sample_sampler",
@@ -4087,17 +4024,17 @@ def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: 
             "k_dpm_2",
             "k_dpm_2_a",
         ],
-        help=f"sampler (scheduler) type for sample images / サンプル出力時のサンプラー（スケジューラ）の種類",
+        help=f"sampler (scheduler) type for sample images",
     )
 
     parser.add_argument(
         "--config_file",
         type=str,
         default=None,
-        help="using .toml instead of args to pass hyperparameter / ハイパーパラメータを引数ではなく.tomlファイルで渡す",
+        help="using .toml instead of args to pass hyperparameter",
     )
     parser.add_argument(
-        "--output_config", action="store_true", help="output command line args to given .toml file / 引数を.tomlファイルに出力する"
+        "--output_config", action="store_true", help="output command line args to given .toml file"
     )
 
     # SAI Model spec
@@ -4105,37 +4042,37 @@ def add_training_arguments(parser: argparse.ArgumentParser, support_dreambooth: 
         "--metadata_title",
         type=str,
         default=None,
-        help="title for model metadata (default is output_name) / メタデータに書き込まれるモデルタイトル、省略時はoutput_name",
+        help="title for model metadata (default is output_name)",
     )
     parser.add_argument(
         "--metadata_author",
         type=str,
         default=None,
-        help="author name for model metadata / メタデータに書き込まれるモデル作者名",
+        help="author name for model metadata",
     )
     parser.add_argument(
         "--metadata_description",
         type=str,
         default=None,
-        help="description for model metadata / メタデータに書き込まれるモデル説明",
+        help="description for model metadata",
     )
     parser.add_argument(
         "--metadata_license",
         type=str,
         default=None,
-        help="license for model metadata / メタデータに書き込まれるモデルライセンス",
+        help="license for model metadata",
     )
     parser.add_argument(
         "--metadata_tags",
         type=str,
         default=None,
-        help="tags for model metadata, separated by comma / メタデータに書き込まれるモデルタグ、カンマ区切り",
+        help="tags for model metadata, separated by comma",
     )
 
     if support_dreambooth:
         # DreamBooth training
         parser.add_argument(
-            "--prior_loss_weight", type=float, default=1.0, help="loss weight for regularization images / 正則化画像のlossの重み"
+            "--prior_loss_weight", type=float, default=1.0, help="loss weight for regularization images"
         )
 
 
@@ -4144,38 +4081,38 @@ def add_masked_loss_arguments(parser: argparse.ArgumentParser):
         "--conditioning_data_dir",
         type=str,
         default=None,
-        help="conditioning data directory / 条件付けデータのディレクトリ",
+        help="conditioning data directory",
     )
     parser.add_argument(
         "--masked_loss",
         action="store_true",
-        help="apply mask for calculating loss. conditioning_data_dir is required for dataset. / 損失計算時にマスクを適用する。datasetにはconditioning_data_dirが必要",
+        help="apply mask for calculating loss. conditioning_data_dir is required for dataset.",
     )
 
 
 def add_dit_training_arguments(parser: argparse.ArgumentParser):
     # Text encoder related arguments
     parser.add_argument(
-        "--cache_text_encoder_outputs", action="store_true", help="cache text encoder outputs / text encoderの出力をキャッシュする"
+        "--cache_text_encoder_outputs", action="store_true", help="cache text encoder outputs"
     )
     parser.add_argument(
         "--cache_text_encoder_outputs_to_disk",
         action="store_true",
-        help="cache text encoder outputs to disk / text encoderの出力をディスクにキャッシュする",
+        help="cache text encoder outputs to disk",
     )
     parser.add_argument(
         "--text_encoder_batch_size",
         type=int,
         default=None,
         help="text encoder batch size (default: None, use dataset's batch size)"
-        + " / text encoderのバッチサイズ（デフォルト: None, データセットのバッチサイズを使用）",
+        + "",
     )
 
     # Model loading optimization
     parser.add_argument(
         "--disable_mmap_load_safetensors",
         action="store_true",
-        help="disable mmap load for safetensors. Speed up model loading in WSL environment / safetensorsのmmapロードを無効にする。WSL環境等でモデル読み込みを高速化できる",
+        help="disable mmap load for safetensors. Speed up model loading in WSL environment",
     )
 
     # Training arguments. partial copy from Diffusers
@@ -4185,25 +4122,25 @@ def add_dit_training_arguments(parser: argparse.ArgumentParser):
         default="uniform",
         choices=["sigma_sqrt", "logit_normal", "mode", "cosmap", "none", "uniform"],
         help="weighting scheme for timestep distribution. Default is uniform, uniform and none are the same behavior"
-        " / タイムステップ分布の重み付けスキーム、デフォルトはuniform、uniform と none は同じ挙動",
+        "",
     )
     parser.add_argument(
         "--logit_mean",
         type=float,
         default=0.0,
-        help="mean to use when using the `'logit_normal'` weighting scheme / `'logit_normal'`重み付けスキームを使用する場合の平均",
+        help="mean to use when using the `'logit_normal'` weighting scheme",
     )
     parser.add_argument(
         "--logit_std",
         type=float,
         default=1.0,
-        help="std to use when using the `'logit_normal'` weighting scheme / `'logit_normal'`重み付けスキームを使用する場合のstd",
+        help="std to use when using the `'logit_normal'` weighting scheme",
     )
     parser.add_argument(
         "--mode_scale",
         type=float,
         default=1.29,
-        help="Scale of mode weighting scheme. Only effective when using the `'mode'` as the `weighting_scheme` / モード重み付けスキームのスケール",
+        help="Scale of mode weighting scheme. Only effective when using the `'mode'` as the `weighting_scheme`",
     )
 
     # offloading
@@ -4214,8 +4151,8 @@ def add_dit_training_arguments(parser: argparse.ArgumentParser):
         help="[EXPERIMENTAL] "
         "Sets the number of blocks to swap during the forward and backward passes."
         "Increasing this number lowers the overall VRAM used during training at the expense of training speed (s/it)."
-        " / 順伝播および逆伝播中にスワップするブロックの数を設定します。"
-        "この数を増やすと、トレーニング中のVRAM使用量が減りますが、トレーニング速度（s/it）も低下します。",
+        ""
+        "VRAMs/it",
     )
 
 
@@ -4260,9 +4197,9 @@ def verify_command_line_training_args(args: argparse.Namespace):
     # if wandb is enabled, the command line is exposed to the public
     # check whether sensitive options are included in the command line arguments
     # if so, warn or inform the user to move them to the configuration file
-    # wandbが有効な場合、コマンドラインが公開される
-    # 学習用のコマンドライン引数に敏感なオプションが含まれているかどうかを確認し、
-    # 含まれている場合は設定ファイルに移動するようにユーザーに警告または通知する
+    
+    
+    
 
     wandb_enabled = args.log_with is not None and args.log_with != "tensorboard"  # "all" or "wandb"
     if not wandb_enabled:
@@ -4284,7 +4221,7 @@ def verify_command_line_training_args(args: argparse.Namespace):
         if getattr(args, arg, None) is not None:
             logger.warning(
                 f"wandb is enabled, but option `{arg}` is included in the command line. Because the command line is exposed to the public, it is recommended to move it to the `.toml` file."
-                + f" / wandbが有効で、かつオプション `{arg}` がコマンドラインに含まれています。コマンドラインは公開されるため、`.toml`ファイルに移動することをお勧めします。"
+                + f""
             )
 
     # if path is absolute, it may include sensitive information
@@ -4292,87 +4229,85 @@ def verify_command_line_training_args(args: argparse.Namespace):
         if getattr(args, arg, None) is not None and os.path.isabs(getattr(args, arg)):
             logger.info(
                 f"wandb is enabled, but option `{arg}` is included in the command line and it is an absolute path. Because the command line is exposed to the public, it is recommended to move it to the `.toml` file or use relative path."
-                + f" / wandbが有効で、かつオプション `{arg}` がコマンドラインに含まれており、絶対パスです。コマンドラインは公開されるため、`.toml`ファイルに移動するか、相対パスを使用することをお勧めします。"
+                + f""
             )
 
     if getattr(args, "config_file", None) is not None:
         logger.info(
             f"wandb is enabled, but option `config_file` is included in the command line. Because the command line is exposed to the public, please be careful about the information included in the path."
-            + f" / wandbが有効で、かつオプション `config_file` がコマンドラインに含まれています。コマンドラインは公開されるため、パスに含まれる情報にご注意ください。"
+            + f""
         )
 
     # other sensitive options
     if args.huggingface_repo_id is not None and args.huggingface_repo_visibility != "public":
         logger.info(
             f"wandb is enabled, but option huggingface_repo_id is included in the command line and huggingface_repo_visibility is not 'public'. Because the command line is exposed to the public, it is recommended to move it to the `.toml` file."
-            + f" / wandbが有効で、かつオプション huggingface_repo_id がコマンドラインに含まれており、huggingface_repo_visibility が 'public' ではありません。コマンドラインは公開されるため、`.toml`ファイルに移動することをお勧めします。"
+            + f""
         )
 
 
 def enable_high_vram(args: argparse.Namespace):
     if args.highvram:
-        logger.info("highvram is enabled / highvramが有効です")
+        logger.info("highvram is enabled")
         global HIGH_VRAM
         HIGH_VRAM = True
 
 
 def verify_training_args(args: argparse.Namespace):
-    r"""
-    Verify training arguments. Also reflect highvram option to global variable
-    学習用引数を検証する。あわせて highvram オプションの指定をグローバル変数に反映する
-    """
+    r"""Verify training arguments. Also reflect highvram option to global variable
+     highvram"""
     enable_high_vram(args)
 
     if args.v2 and args.clip_skip is not None:
-        logger.warning("v2 with clip_skip will be unexpected / v2でclip_skipを使用することは想定されていません")
+        logger.warning("v2 with clip_skip will be unexpected")
 
     if args.cache_latents_to_disk and not args.cache_latents:
         args.cache_latents = True
         logger.warning(
-            "cache_latents_to_disk is enabled, so cache_latents is also enabled / cache_latents_to_diskが有効なため、cache_latentsを有効にします"
+            "cache_latents_to_disk is enabled, so cache_latents is also enabled"
         )
 
     # noise_offset, perlin_noise, multires_noise_iterations cannot be enabled at the same time
-    # # Listを使って数えてもいいけど並べてしまえ
+    
     # if args.noise_offset is not None and args.multires_noise_iterations is not None:
     #     raise ValueError(
-    #         "noise_offset and multires_noise_iterations cannot be enabled at the same time / noise_offsetとmultires_noise_iterationsを同時に有効にできません"
+    #         "noise_offset and multires_noise_iterations cannot be enabled at the same time
     #     )
     # if args.noise_offset is not None and args.perlin_noise is not None:
-    #     raise ValueError("noise_offset and perlin_noise cannot be enabled at the same time / noise_offsetとperlin_noiseは同時に有効にできません")
+    #     raise ValueError("noise_offset and perlin_noise cannot be enabled at the same time
     # if args.perlin_noise is not None and args.multires_noise_iterations is not None:
     #     raise ValueError(
-    #         "perlin_noise and multires_noise_iterations cannot be enabled at the same time / perlin_noiseとmultires_noise_iterationsを同時に有効にできません"
+    #         "perlin_noise and multires_noise_iterations cannot be enabled at the same time
     #     )
 
     if args.adaptive_noise_scale is not None and args.noise_offset is None:
-        raise ValueError("adaptive_noise_scale requires noise_offset / adaptive_noise_scaleを使用するにはnoise_offsetが必要です")
+        raise ValueError("adaptive_noise_scale requires noise_offset")
 
     if args.scale_v_pred_loss_like_noise_pred and not args.v_parameterization:
         raise ValueError(
-            "scale_v_pred_loss_like_noise_pred can be enabled only with v_parameterization / scale_v_pred_loss_like_noise_predはv_parameterizationが有効なときのみ有効にできます"
+            "scale_v_pred_loss_like_noise_pred can be enabled only with v_parameterization"
         )
 
     if args.v_pred_like_loss and args.v_parameterization:
         raise ValueError(
-            "v_pred_like_loss cannot be enabled with v_parameterization / v_pred_like_lossはv_parameterizationが有効なときには有効にできません"
+            "v_pred_like_loss cannot be enabled with v_parameterization"
         )
 
     if args.zero_terminal_snr and not args.v_parameterization:
         logger.warning(
             f"zero_terminal_snr is enabled, but v_parameterization is not enabled. training will be unexpected"
-            + " / zero_terminal_snrが有効ですが、v_parameterizationが有効ではありません。学習結果は想定外になる可能性があります"
+            + ""
         )
 
     if args.sample_every_n_epochs is not None and args.sample_every_n_epochs <= 0:
         logger.warning(
-            "sample_every_n_epochs is less than or equal to 0, so it will be disabled / sample_every_n_epochsに0以下の値が指定されたため無効になります"
+            "sample_every_n_epochs is less than or equal to 0, so it will be disabled"
         )
         args.sample_every_n_epochs = None
 
     if args.sample_every_n_steps is not None and args.sample_every_n_steps <= 0:
         logger.warning(
-            "sample_every_n_steps is less than or equal to 0, so it will be disabled / sample_every_n_stepsに0以下の値が指定されたため無効になります"
+            "sample_every_n_steps is less than or equal to 0, so it will be disabled"
         )
         args.sample_every_n_steps = None
 
@@ -4382,208 +4317,208 @@ def add_dataset_arguments(
 ):
     # dataset common
     parser.add_argument(
-        "--train_data_dir", type=str, default=None, help="directory for train images / 学習画像データのディレクトリ"
+        "--train_data_dir", type=str, default=None, help="directory for train images"
     )
     parser.add_argument(
         "--cache_info",
         action="store_true",
         help="cache meta information (caption and image size) for faster dataset loading. only available for DreamBooth"
-        + " / メタ情報（キャプションとサイズ）をキャッシュしてデータセット読み込みを高速化する。DreamBooth方式のみ有効",
+        + "",
     )
     parser.add_argument(
-        "--shuffle_caption", action="store_true", help="shuffle separated caption / 区切られたcaptionの各要素をshuffleする"
+        "--shuffle_caption", action="store_true", help="shuffle separated caption"
     )
-    parser.add_argument("--caption_separator", type=str, default=",", help="separator for caption / captionの区切り文字")
+    parser.add_argument("--caption_separator", type=str, default=",", help="separator for caption")
     parser.add_argument(
-        "--caption_extension", type=str, default=".caption", help="extension of caption files / 読み込むcaptionファイルの拡張子"
+        "--caption_extension", type=str, default=".caption", help="extension of caption files"
     )
     parser.add_argument(
         "--caption_extention",
         type=str,
         default=None,
-        help="extension of caption files (backward compatibility) / 読み込むcaptionファイルの拡張子（スペルミスを残してあります）",
+        help="extension of caption files (backward compatibility)",
     )
     parser.add_argument(
         "--keep_tokens",
         type=int,
         default=0,
-        help="keep heading N tokens when shuffling caption tokens (token means comma separated strings) / captionのシャッフル時に、先頭からこの個数のトークンをシャッフルしないで残す（トークンはカンマ区切りの各部分を意味する）",
+        help="keep heading N tokens when shuffling caption tokens (token means comma separated strings)",
     )
     parser.add_argument(
         "--keep_tokens_separator",
         type=str,
         default="",
         help="A custom separator to divide the caption into fixed and flexible parts. Tokens before this separator will not be shuffled. If not specified, '--keep_tokens' will be used to determine the fixed number of tokens."
-        + " / captionを固定部分と可変部分に分けるためのカスタム区切り文字。この区切り文字より前のトークンはシャッフルされない。指定しない場合、'--keep_tokens'が固定部分のトークン数として使用される。",
+        + "",
     )
     parser.add_argument(
         "--secondary_separator",
         type=str,
         default=None,
         help="a secondary separator for caption. This separator is replaced to caption_separator after dropping/shuffling caption"
-        + " / captionのセカンダリ区切り文字。この区切り文字はcaptionのドロップやシャッフル後にcaption_separatorに置き換えられる",
+        + "",
     )
     parser.add_argument(
         "--enable_wildcard",
         action="store_true",
-        help="enable wildcard for caption (e.g. '{image|picture|rendition}') / captionのワイルドカードを有効にする（例：'{image|picture|rendition}'）",
+        help="enable wildcard for caption (e.g. '{image|picture|rendition}')",
     )
     parser.add_argument(
         "--caption_prefix",
         type=str,
         default=None,
-        help="prefix for caption text / captionのテキストの先頭に付ける文字列",
+        help="prefix for caption text",
     )
     parser.add_argument(
         "--caption_suffix",
         type=str,
         default=None,
-        help="suffix for caption text / captionのテキストの末尾に付ける文字列",
+        help="suffix for caption text",
     )
     parser.add_argument(
-        "--color_aug", action="store_true", help="enable weak color augmentation / 学習時に色合いのaugmentationを有効にする"
+        "--color_aug", action="store_true", help="enable weak color augmentation"
     )
     parser.add_argument(
-        "--flip_aug", action="store_true", help="enable horizontal flip augmentation / 学習時に左右反転のaugmentationを有効にする"
+        "--flip_aug", action="store_true", help="enable horizontal flip augmentation"
     )
     parser.add_argument(
         "--face_crop_aug_range",
         type=str,
         default=None,
-        help="enable face-centered crop augmentation and its range (e.g. 2.0,4.0) / 学習時に顔を中心とした切り出しaugmentationを有効にするときは倍率を指定する（例：2.0,4.0）",
+        help="enable face-centered crop augmentation and its range (e.g. 2.0,4.0)",
     )
     parser.add_argument(
         "--random_crop",
         action="store_true",
-        help="enable random crop (for style training in face-centered crop augmentation) / ランダムな切り出しを有効にする（顔を中心としたaugmentationを行うときに画風の学習用に指定する）",
+        help="enable random crop (for style training in face-centered crop augmentation)",
     )
     parser.add_argument(
         "--debug_dataset",
         action="store_true",
-        help="show images for debugging (do not train) / デバッグ用に学習データを画面表示する（学習は行わない）",
+        help="show images for debugging (do not train)",
     )
     parser.add_argument(
         "--resolution",
         type=str,
         default=None,
-        help="resolution in training ('size' or 'width,height') / 学習時の画像解像度（'サイズ'指定、または'幅,高さ'指定）",
+        help="resolution in training ('size' or 'width,height')",
     )
     parser.add_argument(
         "--cache_latents",
         action="store_true",
-        help="cache latents to main memory to reduce VRAM usage (augmentations must be disabled) / VRAM削減のためにlatentをメインメモリにcacheする（augmentationは使用不可） ",
+        help="cache latents to main memory to reduce VRAM usage (augmentations must be disabled)",
     )
     parser.add_argument(
-        "--vae_batch_size", type=int, default=1, help="batch size for caching latents / latentのcache時のバッチサイズ"
+        "--vae_batch_size", type=int, default=1, help="batch size for caching latents"
     )
     parser.add_argument(
         "--cache_latents_to_disk",
         action="store_true",
-        help="cache latents to disk to reduce VRAM usage (augmentations must be disabled) / VRAM削減のためにlatentをディスクにcacheする（augmentationは使用不可）",
+        help="cache latents to disk to reduce VRAM usage (augmentations must be disabled)",
     )
     parser.add_argument(
         "--skip_cache_check",
         action="store_true",
         help="skip the content validation of cache (latent and text encoder output). Cache file existence check is always performed, and cache processing is performed if the file does not exist"
-        " / cacheの内容の検証をスキップする（latentとテキストエンコーダの出力）。キャッシュファイルの存在確認は常に行われ、ファイルがなければキャッシュ処理が行われる",
+        "",
     )
     parser.add_argument(
         "--enable_bucket",
         action="store_true",
-        help="enable buckets for multi aspect ratio training / 複数解像度学習のためのbucketを有効にする",
+        help="enable buckets for multi aspect ratio training",
     )
     parser.add_argument(
         "--min_bucket_reso",
         type=int,
         default=256,
-        help="minimum resolution for buckets, must be divisible by bucket_reso_steps "
-        " / bucketの最小解像度、bucket_reso_stepsで割り切れる必要があります",
+        help="minimum resolution for buckets, must be divisible by bucket_reso_steps"
+        "",
     )
     parser.add_argument(
         "--max_bucket_reso",
         type=int,
         default=1024,
-        help="maximum resolution for buckets, must be divisible by bucket_reso_steps "
-        " / bucketの最大解像度、bucket_reso_stepsで割り切れる必要があります",
+        help="maximum resolution for buckets, must be divisible by bucket_reso_steps"
+        "",
     )
     parser.add_argument(
         "--bucket_reso_steps",
         type=int,
         default=64,
-        help="steps of resolution for buckets, divisible by 8 is recommended / bucketの解像度の単位、8で割り切れる値を推奨します",
+        help="steps of resolution for buckets, divisible by 8 is recommended",
     )
     parser.add_argument(
         "--bucket_no_upscale",
         action="store_true",
-        help="make bucket for each image without upscaling / 画像を拡大せずbucketを作成します",
+        help="make bucket for each image without upscaling",
     )
     parser.add_argument(
         "--resize_interpolation",
         type=str,
         default=None,
         choices=["lanczos", "nearest", "bilinear", "linear", "bicubic", "cubic", "area"],
-        help="Resize interpolation when required. Default: area Options: lanczos, nearest, bilinear, bicubic, area / 必要に応じてサイズ補間を変更します。デフォルト: area オプション: lanczos, nearest, bilinear, bicubic, area",
+        help="Resize interpolation when required. Default: area Options: lanczos, nearest, bilinear, bicubic, area",
     )
     parser.add_argument(
         "--token_warmup_min",
         type=int,
         default=1,
-        help="start learning at N tags (token means comma separated strinfloatgs) / タグ数をN個から増やしながら学習する",
+        help="start learning at N tags (token means comma separated strinfloatgs)",
     )
     parser.add_argument(
         "--token_warmup_step",
         type=float,
         default=0,
-        help="tag length reaches maximum on N steps (or N*max_train_steps if N<1) / N（N<1ならN*max_train_steps）ステップでタグ長が最大になる。デフォルトは0（最初から最大）",
+        help="tag length reaches maximum on N steps (or N*max_train_steps if N<1)",
     )
     parser.add_argument(
         "--alpha_mask",
         action="store_true",
-        help="use alpha channel as mask for training / 画像のアルファチャンネルをlossのマスクに使用する",
+        help="use alpha channel as mask for training",
     )
 
     parser.add_argument(
         "--dataset_class",
         type=str,
         default=None,
-        help="dataset class for arbitrary dataset (package.module.Class) / 任意のデータセットを用いるときのクラス名 (package.module.Class)",
+        help="dataset class for arbitrary dataset (package.module.Class)",
     )
 
     if support_caption_dropout:
-        # Textual Inversion はcaptionのdropoutをsupportしない
-        # いわゆるtensorのDropoutと紛らわしいのでprefixにcaptionを付けておく　every_n_epochsは他と平仄を合わせてdefault Noneに
+        
+        
         parser.add_argument(
-            "--caption_dropout_rate", type=float, default=0.0, help="Rate out dropout caption(0.0~1.0) / captionをdropoutする割合"
+            "--caption_dropout_rate", type=float, default=0.0, help="Rate out dropout caption(0.0~1.0)"
         )
         parser.add_argument(
             "--caption_dropout_every_n_epochs",
             type=int,
             default=0,
-            help="Dropout all captions every N epochs / captionを指定エポックごとにdropoutする",
+            help="Dropout all captions every N epochs",
         )
         parser.add_argument(
             "--caption_tag_dropout_rate",
             type=float,
             default=0.0,
-            help="Rate out dropout comma separated tokens(0.0~1.0) / カンマ区切りのタグをdropoutする割合",
+            help="Rate out dropout comma separated tokens(0.0~1.0)",
         )
 
     if support_dreambooth:
         # DreamBooth dataset
         parser.add_argument(
-            "--reg_data_dir", type=str, default=None, help="directory for regularization images / 正則化画像データのディレクトリ"
+            "--reg_data_dir", type=str, default=None, help="directory for regularization images"
         )
 
     if support_caption:
         # caption dataset
         parser.add_argument(
-            "--in_json", type=str, default=None, help="json metadata for dataset / データセットのmetadataのjsonファイル"
+            "--in_json", type=str, default=None, help="json metadata for dataset"
         )
         parser.add_argument(
             "--dataset_repeats",
             type=int,
             default=1,
-            help="repeat dataset when training with captions / キャプションでの学習時にデータセットを繰り返す回数",
+            help="repeat dataset when training with captions",
         )
 
 
@@ -4593,12 +4528,12 @@ def add_sd_saving_arguments(parser: argparse.ArgumentParser):
         type=str,
         default=None,
         choices=[None, "ckpt", "safetensors", "diffusers", "diffusers_safetensors"],
-        help="format to save the model (default is same to original) / モデル保存時の形式（未指定時は元モデルと同じ）",
+        help="format to save the model (default is same to original)",
     )
     parser.add_argument(
         "--use_safetensors",
         action="store_true",
-        help="use safetensors format to save (if save_model_as is not specified) / checkpoint、モデルをsafetensors形式で保存する（save_model_as未指定時）",
+        help="use safetensors format to save (if save_model_as is not specified)",
     )
 
 
@@ -4611,7 +4546,7 @@ def read_config_from_file(args: argparse.Namespace, parser: argparse.ArgumentPar
     if args.output_config:
         # check if config file exists
         if os.path.exists(config_path):
-            logger.error(f"Config file already exists. Aborting... / 出力先の設定ファイルが既に存在します: {config_path}")
+            logger.error(f"Config file already exists. Aborting...")
             exit(1)
 
         # convert args to dictionary
@@ -4639,7 +4574,7 @@ def read_config_from_file(args: argparse.Namespace, parser: argparse.ArgumentPar
         with open(config_path, "w") as f:
             toml.dump(args_dict, f)
 
-        logger.info(f"Saved config file / 設定ファイルを保存しました: {config_path}")
+        logger.info(f"Saved config file")
         exit(0)
 
     if not os.path.exists(config_path):
@@ -4721,7 +4656,7 @@ def resume_from_local_or_hf_if_specified(accelerator, args):
     results = loop.run_until_complete(asyncio.gather(*[download(filename=filename.rfilename) for filename in list_files]))
     if len(results) == 0:
         raise ValueError(
-            "No files found in the specified repo id/path/revision / 指定されたリポジトリID/パス/リビジョンにファイルが見つかりませんでした"
+            "No files found in the specified repo id/path/revision"
         )
     dirname = os.path.dirname(results[0])
     accelerator.load_state(dirname)
@@ -4734,16 +4669,16 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
     if args.use_8bit_adam:
         assert (
             not args.use_lion_optimizer
-        ), "both option use_8bit_adam and use_lion_optimizer are specified / use_8bit_adamとuse_lion_optimizerの両方のオプションが指定されています"
+        ), "both option use_8bit_adam and use_lion_optimizer are specified"
         assert (
             optimizer_type is None or optimizer_type == ""
-        ), "both option use_8bit_adam and optimizer_type are specified / use_8bit_adamとoptimizer_typeの両方のオプションが指定されています"
+        ), "both option use_8bit_adam and optimizer_type are specified"
         optimizer_type = "AdamW8bit"
 
     elif args.use_lion_optimizer:
         assert (
             optimizer_type is None or optimizer_type == ""
-        ), "both option use_lion_optimizer and optimizer_type are specified / use_lion_optimizerとoptimizer_typeの両方のオプションが指定されています"
+        ), "both option use_lion_optimizer and optimizer_type are specified"
         optimizer_type = "Lion"
 
     if optimizer_type is None or optimizer_type == "":
@@ -4753,12 +4688,12 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
     if args.fused_backward_pass:
         assert (
             optimizer_type == "Adafactor".lower()
-        ), "fused_backward_pass currently only works with optimizer_type Adafactor / fused_backward_passは現在optimizer_type Adafactorでのみ機能します"
+        ), "fused_backward_pass currently only works with optimizer_type Adafactor"
         assert (
             args.gradient_accumulation_steps == 1
-        ), "fused_backward_pass does not work with gradient_accumulation_steps > 1 / fused_backward_passはgradient_accumulation_steps>1では機能しません"
+        ), "fused_backward_pass does not work with gradient_accumulation_steps > 1"
 
-    # 引数を分解する
+    
     optimizer_kwargs = {}
     if args.optimizer_args is not None and len(args.optimizer_args) > 0:
         for arg in args.optimizer_args:
@@ -4787,7 +4722,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         try:
             import lion_pytorch
         except ImportError:
-            raise ImportError("No lion_pytorch / lion_pytorch がインストールされていないようです")
+            raise ImportError("No lion_pytorch")
         logger.info(f"use Lion optimizer | {optimizer_kwargs}")
         optimizer_class = lion_pytorch.Lion
         optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
@@ -4796,7 +4731,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         try:
             import bitsandbytes as bnb
         except ImportError:
-            raise ImportError("No bitsandbytes / bitsandbytesがインストールされていないようです")
+            raise ImportError("No bitsandbytes")
 
         if optimizer_type == "AdamW8bit".lower():
             logger.info(f"use 8-bit AdamW optimizer | {optimizer_kwargs}")
@@ -4807,7 +4742,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
             logger.info(f"use 8-bit SGD with Nesterov optimizer | {optimizer_kwargs}")
             if "momentum" not in optimizer_kwargs:
                 logger.warning(
-                    f"8-bit SGD with Nesterov must be with momentum, set momentum to 0.9 / 8-bit SGD with Nesterovはmomentum指定が必須のため0.9に設定します"
+                    f"8-bit SGD with Nesterov must be with momentum, set momentum to 0.9"
                 )
                 optimizer_kwargs["momentum"] = 0.9
 
@@ -4820,7 +4755,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
                 optimizer_class = bnb.optim.Lion8bit
             except AttributeError:
                 raise AttributeError(
-                    "No Lion8bit. The version of bitsandbytes installed seems to be old. Please install 0.38.0 or later. / Lion8bitが定義されていません。インストールされているbitsandbytesのバージョンが古いようです。0.38.0以上をインストールしてください"
+                    "No Lion8bit. The version of bitsandbytes installed seems to be old. Please install 0.38.0 or later."
                 )
         elif optimizer_type == "PagedAdamW8bit".lower():
             logger.info(f"use 8-bit PagedAdamW optimizer | {optimizer_kwargs}")
@@ -4828,7 +4763,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
                 optimizer_class = bnb.optim.PagedAdamW8bit
             except AttributeError:
                 raise AttributeError(
-                    "No PagedAdamW8bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later. / PagedAdamW8bitが定義されていません。インストールされているbitsandbytesのバージョンが古いようです。0.39.0以上をインストールしてください"
+                    "No PagedAdamW8bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later."
                 )
         elif optimizer_type == "PagedLion8bit".lower():
             logger.info(f"use 8-bit Paged Lion optimizer | {optimizer_kwargs}")
@@ -4836,7 +4771,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
                 optimizer_class = bnb.optim.PagedLion8bit
             except AttributeError:
                 raise AttributeError(
-                    "No PagedLion8bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later. / PagedLion8bitが定義されていません。インストールされているbitsandbytesのバージョンが古いようです。0.39.0以上をインストールしてください"
+                    "No PagedLion8bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later."
                 )
 
         if optimizer_class is not None:
@@ -4847,12 +4782,12 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         try:
             import bitsandbytes as bnb
         except ImportError:
-            raise ImportError("No bitsandbytes / bitsandbytesがインストールされていないようです")
+            raise ImportError("No bitsandbytes")
         try:
             optimizer_class = bnb.optim.PagedAdamW
         except AttributeError:
             raise AttributeError(
-                "No PagedAdamW. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later. / PagedAdamWが定義されていません。インストールされているbitsandbytesのバージョンが古いようです。0.39.0以上をインストールしてください"
+                "No PagedAdamW. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later."
             )
         optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
 
@@ -4861,12 +4796,12 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         try:
             import bitsandbytes as bnb
         except ImportError:
-            raise ImportError("No bitsandbytes / bitsandbytesがインストールされていないようです")
+            raise ImportError("No bitsandbytes")
         try:
             optimizer_class = bnb.optim.PagedAdamW32bit
         except AttributeError:
             raise AttributeError(
-                "No PagedAdamW32bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later. / PagedAdamW32bitが定義されていません。インストールされているbitsandbytesのバージョンが古いようです。0.39.0以上をインストールしてください"
+                "No PagedAdamW32bit. The version of bitsandbytes installed seems to be old. Please install 0.39.0 or later."
             )
         optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
 
@@ -4874,7 +4809,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         logger.info(f"use SGD with Nesterov optimizer | {optimizer_kwargs}")
         if "momentum" not in optimizer_kwargs:
             logger.info(
-                f"SGD with Nesterov must be with momentum, set momentum to 0.9 / SGD with Nesterovはmomentum指定が必須のため0.9に設定します"
+                f"SGD with Nesterov must be with momentum, set momentum to 0.9"
             )
             optimizer_kwargs["momentum"] = 0.9
 
@@ -4894,12 +4829,12 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
 
         if actual_lr <= 0.1:
             logger.warning(
-                f"learning rate is too low. If using D-Adaptation or Prodigy, set learning rate around 1.0 / 学習率が低すぎるようです。D-AdaptationまたはProdigyの使用時は1.0前後の値を指定してください: lr={actual_lr}"
+                f"learning rate is too low. If using D-Adaptation or Prodigy, set learning rate around 1.0"
             )
-            logger.warning("recommend option: lr=1.0 / 推奨は1.0です")
+            logger.warning("recommend option: lr=1.0")
         if lr_count > 1:
             logger.warning(
-                f"when multiple learning rates are specified with dadaptation (e.g. for Text Encoder and U-Net), only the first one will take effect / D-AdaptationまたはProdigyで複数の学習率を指定した場合（Text EncoderとU-Netなど）、最初の学習率のみが有効になります: lr={actual_lr}"
+                f"when multiple learning rates are specified with dadaptation (e.g. for Text Encoder and U-Net), only the first one will take effect"
             )
 
         if optimizer_type.startswith("DAdapt".lower()):
@@ -4909,7 +4844,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
                 import dadaptation
                 import dadaptation.experimental as experimental
             except ImportError:
-                raise ImportError("No dadaptation / dadaptation がインストールされていないようです")
+                raise ImportError("No dadaptation")
 
             # set optimizer
             if optimizer_type == "DAdaptation".lower() or optimizer_type == "DAdaptAdamPreprint".lower():
@@ -4943,30 +4878,30 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
             try:
                 import prodigyopt
             except ImportError:
-                raise ImportError("No Prodigy / Prodigy がインストールされていないようです")
+                raise ImportError("No Prodigy")
 
             logger.info(f"use Prodigy optimizer | {optimizer_kwargs}")
             optimizer_class = prodigyopt.Prodigy
             optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
 
     elif optimizer_type == "Adafactor".lower():
-        # 引数を確認して適宜補正する
+        
         if "relative_step" not in optimizer_kwargs:
             optimizer_kwargs["relative_step"] = True  # default
         if not optimizer_kwargs["relative_step"] and optimizer_kwargs.get("warmup_init", False):
             logger.info(
-                f"set relative_step to True because warmup_init is True / warmup_initがTrueのためrelative_stepをTrueにします"
+                f"set relative_step to True because warmup_init is True"
             )
             optimizer_kwargs["relative_step"] = True
         logger.info(f"use Adafactor optimizer | {optimizer_kwargs}")
 
         if optimizer_kwargs["relative_step"]:
-            logger.info(f"relative_step is true / relative_stepがtrueです")
+            logger.info(f"relative_step is true")
             if lr != 0.0:
-                logger.warning(f"learning rate is used as initial_lr / 指定したlearning rateはinitial_lrとして使用されます")
+                logger.warning(f"learning rate is used as initial_lr")
             args.learning_rate = None
 
-            # trainable_paramsがgroupだった時の処理：lrを削除する
+            
             if type(trainable_params) == list and type(trainable_params[0]) == dict:
                 has_group_lr = False
                 for group in trainable_params:
@@ -4974,25 +4909,25 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
                     has_group_lr = has_group_lr or (p is not None)
 
                 if has_group_lr:
-                    # 一応argsを無効にしておく TODO 依存関係が逆転してるのであまり望ましくない
-                    logger.warning(f"unet_lr and text_encoder_lr are ignored / unet_lrとtext_encoder_lrは無視されます")
+                    
+                    logger.warning(f"unet_lr and text_encoder_lr are ignored")
                     args.unet_lr = None
                     args.text_encoder_lr = None
 
             if args.lr_scheduler != "adafactor":
-                logger.info(f"use adafactor_scheduler / スケジューラにadafactor_schedulerを使用します")
-            args.lr_scheduler = f"adafactor:{lr}"  # ちょっと微妙だけど
+                logger.info(f"use adafactor_scheduler")
+            args.lr_scheduler = f"adafactor:{lr}"  
 
             lr = None
         else:
             if args.max_grad_norm != 0.0:
                 logger.warning(
-                    f"because max_grad_norm is set, clip_grad_norm is enabled. consider set to 0 / max_grad_normが設定されているためclip_grad_normが有効になります。0に設定して無効にしたほうがいいかもしれません"
+                    f"because max_grad_norm is set, clip_grad_norm is enabled. consider set to 0"
                 )
             if args.lr_scheduler != "constant_with_warmup":
-                logger.warning(f"constant_with_warmup will be good / スケジューラはconstant_with_warmupが良いかもしれません")
+                logger.warning(f"constant_with_warmup will be good")
             if optimizer_kwargs.get("clip_threshold", 1.0) != 1.0:
-                logger.warning(f"clip_threshold=1.0 will be good / clip_thresholdは1.0が良いかもしれません")
+                logger.warning(f"clip_threshold=1.0 will be good")
 
         optimizer_class = transformers.optimization.Adafactor
         optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
@@ -5006,7 +4941,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         try:
             import schedulefree as sf
         except ImportError:
-            raise ImportError("No schedulefree / schedulefreeがインストールされていないようです")
+            raise ImportError("No schedulefree")
 
         if optimizer_type == "RAdamScheduleFree".lower():
             optimizer_class = sf.RAdamScheduleFree
@@ -5024,7 +4959,7 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
             optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
 
     if optimizer is None:
-        # 任意のoptimizerを使う
+        
         case_sensitive_optimizer_type = args.optimizer_type  # not lower
         logger.info(f"use {case_sensitive_optimizer_type} | {optimizer_kwargs}")
 
@@ -5038,86 +4973,12 @@ def get_optimizer(args, trainable_params) -> tuple[str, str, object]:
         optimizer_class = getattr(optimizer_module, case_sensitive_optimizer_type)
         optimizer = optimizer_class(trainable_params, lr=lr, **optimizer_kwargs)
 
-    """
-    # wrap any of above optimizer with schedulefree, if optimizer is not schedulefree
+    """# wrap any of above optimizer with schedulefree, if optimizer is not schedulefree
     if args.optimizer_schedulefree_wrapper and not optimizer_type.endswith("schedulefree".lower()):
         try:
             import schedulefree as sf
         except ImportError:
-            raise ImportError("No schedulefree / schedulefreeがインストールされていないようです")
-
-        schedulefree_wrapper_kwargs = {}
-        if args.schedulefree_wrapper_args is not None and len(args.schedulefree_wrapper_args) > 0:
-            for arg in args.schedulefree_wrapper_args:
-                key, value = arg.split("=")
-                value = ast.literal_eval(value)
-                schedulefree_wrapper_kwargs[key] = value
-
-        sf_wrapper = sf.ScheduleFreeWrapper(optimizer, **schedulefree_wrapper_kwargs)
-        sf_wrapper.train()  # make optimizer as train mode
-
-        # we need to make optimizer as a subclass of torch.optim.Optimizer, we make another Proxy class over SFWrapper
-        class OptimizerProxy(torch.optim.Optimizer):
-            def __init__(self, sf_wrapper):
-                self._sf_wrapper = sf_wrapper
-
-            def __getattr__(self, name):
-                return getattr(self._sf_wrapper, name)
-
-            # override properties
-            @property
-            def state(self):
-                return self._sf_wrapper.state
-
-            @state.setter
-            def state(self, state):
-                self._sf_wrapper.state = state
-
-            @property
-            def param_groups(self):
-                return self._sf_wrapper.param_groups
-
-            @param_groups.setter
-            def param_groups(self, param_groups):
-                self._sf_wrapper.param_groups = param_groups
-
-            @property
-            def defaults(self):
-                return self._sf_wrapper.defaults
-
-            @defaults.setter
-            def defaults(self, defaults):
-                self._sf_wrapper.defaults = defaults
-
-            def add_param_group(self, param_group):
-                self._sf_wrapper.add_param_group(param_group)
-
-            def load_state_dict(self, state_dict):
-                self._sf_wrapper.load_state_dict(state_dict)
-
-            def state_dict(self):
-                return self._sf_wrapper.state_dict()
-
-            def zero_grad(self):
-                self._sf_wrapper.zero_grad()
-
-            def step(self, closure=None):
-                self._sf_wrapper.step(closure)
-
-            def train(self):
-                self._sf_wrapper.train()
-
-            def eval(self):
-                self._sf_wrapper.eval()
-
-            # isinstance チェックをパスするためのメソッド
-            def __instancecheck__(self, instance):
-                return isinstance(instance, (type(self), Optimizer))
-
-        optimizer = OptimizerProxy(sf_wrapper)
-
-        logger.info(f"wrap optimizer with ScheduleFreeWrapper | {schedulefree_wrapper_kwargs}")
-    """
+            raise ImportError("No schedulefree"""
 
     # for logging
     optimizer_name = optimizer_class.__module__ + "." + optimizer_class.__name__
@@ -5218,7 +5079,7 @@ def get_scheduler_fix(args, optimizer: Optimizer, num_processes: int):
     if name.startswith("adafactor"):
         assert (
             type(optimizer) == transformers.optimization.Adafactor
-        ), f"adafactor scheduler must be used with Adafactor optimizer / adafactor schedulerはAdafactorオプティマイザと同時に使ってください"
+        ), f"adafactor scheduler must be used with Adafactor optimizer"
         initial_lr = float(name.split(":")[1])
         # logger.info(f"adafactor scheduler init lr {initial_lr}")
         return wrap_check_needless_num_warmup_steps(transformers.optimization.AdafactorSchedule(optimizer, initial_lr))
@@ -5310,27 +5171,27 @@ def prepare_dataset_args(args: argparse.Namespace, support_metadata: bool):
         args.caption_extension = args.caption_extention
         args.caption_extention = None
 
-    # assert args.resolution is not None, f"resolution is required / resolution（解像度）を指定してください"
+    # assert args.resolution is not None, f"resolution is required
     if args.resolution is not None:
         args.resolution = tuple([int(r) for r in args.resolution.split(",")])
         if len(args.resolution) == 1:
             args.resolution = (args.resolution[0], args.resolution[0])
         assert (
             len(args.resolution) == 2
-        ), f"resolution must be 'size' or 'width,height' / resolution（解像度）は'サイズ'または'幅','高さ'で指定してください: {args.resolution}"
+        ), f"resolution must be 'size' or 'width,height'"
 
     if args.face_crop_aug_range is not None:
         args.face_crop_aug_range = tuple([float(r) for r in args.face_crop_aug_range.split(",")])
         assert (
             len(args.face_crop_aug_range) == 2 and args.face_crop_aug_range[0] <= args.face_crop_aug_range[1]
-        ), f"face_crop_aug_range must be two floats / face_crop_aug_rangeは'下限,上限'で指定してください: {args.face_crop_aug_range}"
+        ), f"face_crop_aug_range must be two floats"
     else:
         args.face_crop_aug_range = None
 
     if support_metadata:
         if args.in_json is not None and (args.color_aug or args.random_crop):
             logger.warning(
-                f"latents in npz is ignored when color_aug or random_crop is True / color_augまたはrandom_cropを有効にした場合、npzファイルのlatentsは無視されます"
+                f"latents in npz is ignored when color_aug or random_crop is True"
             )
 
 
@@ -5355,20 +5216,20 @@ def prepare_accelerator(args: argparse.Namespace):
         if log_with in ["tensorboard", "all"]:
             if logging_dir is None:
                 raise ValueError(
-                    "logging_dir is required when log_with is tensorboard / Tensorboardを使う場合、logging_dirを指定してください"
+                    "logging_dir is required when log_with is tensorboard"
                 )
         if log_with in ["wandb", "all"]:
             try:
                 import wandb
             except ImportError:
-                raise ImportError("No wandb / wandb がインストールされていないようです")
+                raise ImportError("No wandb")
             if logging_dir is not None:
                 os.makedirs(logging_dir, exist_ok=True)
                 os.environ["WANDB_DIR"] = logging_dir
             if args.wandb_api_key is not None:
                 wandb.login(key=args.wandb_api_key)
 
-    # torch.compile のオプション。 NO の場合は torch.compile は使わない
+    
     dynamo_backend = "NO"
     if args.torch_compile:
         dynamo_backend = args.dynamo_backend
@@ -5443,7 +5304,7 @@ def _load_target_model(args: argparse.Namespace, weight_dtype, device="cpu", une
             pipe = StableDiffusionPipeline.from_pretrained(name_or_path, tokenizer=None, safety_checker=None)
         except EnvironmentError as ex:
             logger.error(
-                f"model is not found as a file or in Hugging Face, perhaps file name is wrong? / 指定したモデル名のファイル、またはHugging Faceのモデルが見つかりません。ファイル名が誤っているかもしれません: {name_or_path}"
+                f"model is not found as a file or in Hugging Face, perhaps file name is wrong?"
             )
             raise ex
         text_encoder = pipe.text_encoder
@@ -5452,7 +5313,7 @@ def _load_target_model(args: argparse.Namespace, weight_dtype, device="cpu", une
         del pipe
 
         # Diffusers U-Net to original U-Net
-        # TODO *.ckpt/*.safetensorsのv2と同じ形式にここで変換すると良さそう
+        # TODO *.ckpt
         # logger.info(f"unet config: {unet.config}")
         original_unet = UNet2DConditionModel(
             unet.config.sample_size,
@@ -5465,7 +5326,7 @@ def _load_target_model(args: argparse.Namespace, weight_dtype, device="cpu", une
         unet = original_unet
         logger.info("U-Net converted to original U-Net")
 
-    # VAEを読み込む
+    
     if args.vae is not None:
         vae = model_util.load_vae(args.vae, weight_dtype)
         logger.info("additional VAE loaded")
@@ -5525,24 +5386,24 @@ def get_hidden_states(args: argparse.Namespace, input_ids, tokenizer, text_encod
 
     if args.max_token_length is not None:
         if args.v2:
-            # v2: <BOS>...<EOS> <PAD> ... の三連を <BOS>...<EOS> <PAD> ... へ戻す　正直この実装でいいのかわからん
+            # v2
             states_list = [encoder_hidden_states[:, 0].unsqueeze(1)]  # <BOS>
             for i in range(1, args.max_token_length, tokenizer.model_max_length):
-                chunk = encoder_hidden_states[:, i : i + tokenizer.model_max_length - 2]  # <BOS> の後から 最後の前まで
+                chunk = encoder_hidden_states[:, i : i + tokenizer.model_max_length - 2]  
                 if i > 0:
                     for j in range(len(chunk)):
-                        if input_ids[j, 1] == tokenizer.eos_token:  # 空、つまり <BOS> <EOS> <PAD> ...のパターン
-                            chunk[j, 0] = chunk[j, 1]  # 次の <PAD> の値をコピーする
-                states_list.append(chunk)  # <BOS> の後から <EOS> の前まで
-            states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  # <EOS> か <PAD> のどちらか
+                        if input_ids[j, 1] == tokenizer.eos_token:  
+                            chunk[j, 0] = chunk[j, 1]  
+                states_list.append(chunk)  
+            states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  
             encoder_hidden_states = torch.cat(states_list, dim=1)
         else:
-            # v1: <BOS>...<EOS> の三連を <BOS>...<EOS> へ戻す
+            # v1
             states_list = [encoder_hidden_states[:, 0].unsqueeze(1)]  # <BOS>
             for i in range(1, args.max_token_length, tokenizer.model_max_length):
                 states_list.append(
                     encoder_hidden_states[:, i : i + tokenizer.model_max_length - 2]
-                )  # <BOS> の後から <EOS> の前まで
+                )  
             states_list.append(encoder_hidden_states[:, -1].unsqueeze(1))  # <EOS>
             encoder_hidden_states = torch.cat(states_list, dim=1)
 
@@ -5556,8 +5417,7 @@ def get_hidden_states(args: argparse.Namespace, input_ids, tokenizer, text_encod
 def pool_workaround(
     text_encoder: CLIPTextModelWithProjection, last_hidden_state: torch.Tensor, input_ids: torch.Tensor, eos_token_id: int
 ):
-    r"""
-    workaround for CLIP's pooling bug: it returns the hidden states for the max token id as the pooled output
+    r"""workaround for CLIP's pooling bug: it returns the hidden states for the max token id as the pooled output
     instead of the hidden states for the EOS token
     If we use Textual Inversion, we need to use the hidden states for the EOS token as the pooled output
 
@@ -5569,8 +5429,7 @@ def pool_workaround(
     pooled_output = last_hidden_state[
         torch.arange(last_hidden_state.shape[0], device=last_hidden_state.device),
         input_ids.to(dtype=torch.int, device=last_hidden_state.device).argmax(dim=-1),
-    ]
-    """
+    ]"""
 
     # input_ids: b*n,77
     # find index for EOS token
@@ -5631,28 +5490,28 @@ def get_hidden_states_sdxl(
 
     if max_token_length is not None:
         # bs*3, 77, 768 or 1024
-        # encoder1: <BOS>...<EOS> の三連を <BOS>...<EOS> へ戻す
+        # encoder1
         states_list = [hidden_states1[:, 0].unsqueeze(1)]  # <BOS>
         for i in range(1, max_token_length, tokenizer1.model_max_length):
-            states_list.append(hidden_states1[:, i : i + tokenizer1.model_max_length - 2])  # <BOS> の後から <EOS> の前まで
+            states_list.append(hidden_states1[:, i : i + tokenizer1.model_max_length - 2])  
         states_list.append(hidden_states1[:, -1].unsqueeze(1))  # <EOS>
         hidden_states1 = torch.cat(states_list, dim=1)
 
-        # v2: <BOS>...<EOS> <PAD> ... の三連を <BOS>...<EOS> <PAD> ... へ戻す　正直この実装でいいのかわからん
+        # v2
         states_list = [hidden_states2[:, 0].unsqueeze(1)]  # <BOS>
         for i in range(1, max_token_length, tokenizer2.model_max_length):
-            chunk = hidden_states2[:, i : i + tokenizer2.model_max_length - 2]  # <BOS> の後から 最後の前まで
+            chunk = hidden_states2[:, i : i + tokenizer2.model_max_length - 2]  
             # this causes an error:
             # RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation
             # if i > 1:
             #     for j in range(len(chunk)):  # batch_size
-            #         if input_ids2[n_index + j * n_size, 1] == tokenizer2.eos_token_id:  # 空、つまり <BOS> <EOS> <PAD> ...のパターン
-            #             chunk[j, 0] = chunk[j, 1]  # 次の <PAD> の値をコピーする
-            states_list.append(chunk)  # <BOS> の後から <EOS> の前まで
-        states_list.append(hidden_states2[:, -1].unsqueeze(1))  # <EOS> か <PAD> のどちらか
+            #         if input_ids2[n_index + j * n_size
+            #             chunk[j, 0] = chunk[j
+            states_list.append(chunk)  
+        states_list.append(hidden_states2[:, -1].unsqueeze(1))  
         hidden_states2 = torch.cat(states_list, dim=1)
 
-        # pool はnの最初のものを使う
+        
         pool2 = pool2[::n_size]
 
     if weight_dtype is not None:
@@ -5696,8 +5555,8 @@ def get_remove_step_no(args: argparse.Namespace, step_no: int):
     if args.save_last_n_steps is None:
         return None
 
-    # last_n_steps前のstep_noから、save_every_n_stepsの倍数のstep_noを計算して削除する
-    # save_every_n_steps=10, save_last_n_steps=30の場合、50step目には30step分残し、10step目を削除する
+    
+    # save_every_n_steps=10
     remove_step_no = step_no - args.save_last_n_steps - 1
     remove_step_no = remove_step_no - (remove_step_no % args.save_every_n_steps)
     if remove_step_no < 0:
@@ -5705,8 +5564,8 @@ def get_remove_step_no(args: argparse.Namespace, step_no: int):
     return remove_step_no
 
 
-# epochとstepの保存、メタデータにepoch/stepが含まれ引数が同じになるため、統合している
-# on_epoch_end: Trueならepoch終了時、Falseならstep経過時
+
+# on_epoch_end
 def save_sd_model_on_epoch_end_or_stepwise(
     args: argparse.Namespace,
     on_epoch_end: bool,
@@ -5768,10 +5627,10 @@ def save_sd_model_on_epoch_end_or_stepwise_common(
         model_name = default_if_none(args.output_name, DEFAULT_EPOCH_NAME)
         remove_no = get_remove_epoch_no(args, epoch_no)
     else:
-        # 保存するか否かは呼び出し側で判断済み
+        
 
         model_name = default_if_none(args.output_name, DEFAULT_STEP_NAME)
-        epoch_no = epoch  # 例: 最初のepochの途中で保存したら0になる、SDモデルに保存される
+        epoch_no = epoch  
         remove_no = get_remove_step_no(args, global_step)
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -5871,7 +5730,7 @@ def save_and_remove_state_stepwise(args: argparse.Namespace, accelerator, step_n
 
     last_n_steps = args.save_last_n_steps_state if args.save_last_n_steps_state else args.save_last_n_steps
     if last_n_steps is not None:
-        # last_n_steps前のstep_noから、save_every_n_stepsの倍数のstep_noを計算して削除する
+        
         remove_step_no = step_no - last_n_steps - 1
         remove_step_no = remove_step_no - (remove_step_no % args.save_every_n_steps)
 
@@ -6030,9 +5889,7 @@ def get_huber_threshold_if_needed(args, timesteps: torch.Tensor, noise_scheduler
 def conditional_loss(
     model_pred: torch.Tensor, target: torch.Tensor, loss_type: str, reduction: str, huber_c: Optional[torch.Tensor] = None
 ):
-    """
-    NOTE: if you're using the scheduled version, huber_c has to depend on the timesteps already
-    """
+    """NOTE: if you're using the scheduled version, huber_c has to depend on the timesteps already"""
     if loss_type == "l2":
         loss = torch.nn.functional.mse_loss(model_pred, target, reduction=reduction)
     elif loss_type == "l1":
@@ -6099,7 +5956,7 @@ def get_my_scheduler(
     sched_init_args = {}
     if sample_sampler == "ddim":
         scheduler_cls = DDIMScheduler
-    elif sample_sampler == "ddpm":  # ddpmはおかしくなるのでoptionから外してある
+    elif sample_sampler == "ddpm":  
         scheduler_cls = DDPMScheduler
     elif sample_sampler == "pndm":
         scheduler_cls = PNDMScheduler
@@ -6134,7 +5991,7 @@ def get_my_scheduler(
         **sched_init_args,
     )
 
-    # clip_sample=Trueにする
+    
     if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is False:
         # logger.info("set clip_sample to True")
         scheduler.config.clip_sample = True
@@ -6195,7 +6052,7 @@ def line_to_prompt_dict(line: str) -> dict:
                 continue
 
         except ValueError as ex:
-            logger.error(f"Exception in parsing / 解析エラー: {parg}")
+            logger.error(f"Exception in parsing")
             logger.error(ex)
 
     return prompt_dict
@@ -6246,10 +6103,8 @@ def sample_images_common(
     prompt_replacement=None,
     controlnet=None,
 ):
-    """
-    StableDiffusionLongPromptWeightingPipelineの改造版を使うようにしたので、clip skipおよびプロンプトの重みづけに対応した
-    TODO Use strategies here
-    """
+    """StableDiffusionLongPromptWeightingPipelineclip skip
+    TODO Use strategies here"""
 
     if steps == 0:
         if not args.sample_at_first:
@@ -6258,7 +6113,7 @@ def sample_images_common(
         if args.sample_every_n_steps is None and args.sample_every_n_epochs is None:
             return
         if args.sample_every_n_epochs is not None:
-            # sample_every_n_steps は無視する
+            
             if epoch is None or epoch % args.sample_every_n_epochs != 0:
                 return
         else:
@@ -6266,14 +6121,14 @@ def sample_images_common(
                 return
 
     logger.info("")
-    logger.info(f"generating sample images at step / サンプル画像生成 ステップ: {steps}")
+    logger.info(f"generating sample images at step")
     if not os.path.isfile(args.sample_prompts):
-        logger.error(f"No prompt file / プロンプトファイルがありません: {args.sample_prompts}")
+        logger.error(f"No prompt file")
         return
 
     distributed_state = PartialState()  # for multi gpu distributed inference. this is a singleton, so it's safe to use it here
 
-    org_vae_device = vae.device  # CPUにいるはず
+    org_vae_device = vae.device  
     vae.to(distributed_state.device)  # distributed_state.device is same as accelerator.device
 
     # unwrap unet and text_encoder(s)
@@ -6492,7 +6347,7 @@ def init_trackers(accelerator: Accelerator, args: argparse.Namespace, default_tr
 # endregion
 
 
-# region 前処理用
+
 
 
 class ImageLoadingDataset(torch.utils.data.Dataset):
@@ -6510,7 +6365,7 @@ class ImageLoadingDataset(torch.utils.data.Dataset):
             # convert to tensor temporarily so dataloader will accept it
             tensor_pil = transforms.functional.pil_to_tensor(image)
         except Exception as e:
-            logger.error(f"Could not load image path / 画像を読み込めません: {img_path}, error: {e}")
+            logger.error(f"Could not load image path")
             return None
 
         return (tensor_pil, img_path)
@@ -6519,7 +6374,7 @@ class ImageLoadingDataset(torch.utils.data.Dataset):
 # endregion
 
 
-# collate_fn用 epoch,stepはmultiprocessing.Value
+
 class collator_class:
     def __init__(self, epoch, step, dataset):
         self.current_epoch = epoch
