@@ -32,8 +32,9 @@ dependencies = [
     "sentencepiece==0.2.0",
     "torch==2.2.2",
     "torchvision==0.17.2",
+    "lycoris-lora==3.4.0",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [build-system]
 requires = ["setuptools>=42"]

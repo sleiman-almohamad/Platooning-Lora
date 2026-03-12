@@ -56,13 +56,13 @@ sample_every_n_epochs = 1
 sample_prompts = "./Platooning_Datasample_prompts.txt"
 
 [logging]
-log_tracker_name = "Platooning_LoRA_Run1"
+log_tracker_name = "Platooning_Dora_Run1"
 log_with = "tensorboard"
-logging_dir = "./Output_Lora_training/Logs"
+logging_dir = "./Output_Dora_training/Logs"
 
 [save]
-output_dir = "./Output_Lora_training"
-output_name = "Lora_Platooning"
+output_dir = "./Output_Dora_training"
+output_name = "Dora_Platooning"
 save_precision = "bf16"
 save_model_as = "safetensors"
 save_every_n_epochs = 1

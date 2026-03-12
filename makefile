@@ -37,11 +37,16 @@ DATASET_DIR := dataset
 OUTPUT_DIR := Output_Lora_training
 #CONFIG_FILE := training_pars_lora.toml
 
-.PHONY: init train clean show-os
+.PHONY: init train clean show-os grid-search
 
 # --- Main Targets ---
 init: show-os | install-uv create-venv check-dataset download-model
 	@echo "Initialization complete"
+
+grid-search:
+	@echo "--- Starting Grid Search ---"
+	@$(UV_EXE) run run_grid_search.py
+	@echo "Grid Search completed"
 
 show-os:
 	@echo "--- Detected OS: $(DETECTED_OS) ---"
@@ -63,7 +68,7 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(training_pars_lora.toml)
 endif
-	@$(UV_EXE) run train_network.py --config_file=$(training_pars_lora.toml)
+	@$(UV_EXE) run python -m accelerate.commands.launch train_network.py --config_file=training_pars_lora.toml
 	@echo "Training completed"
 
 train_dora:
@@ -73,7 +78,7 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	@sed -i "s|^pretrained_model_name_or_path = .*|pretrained_model_name_or_path = \"$(BASE_MODEL)\"|" $(training_pars_dora.toml)
 endif
-	@$(UV_EXE) run train_network.py --config_file=$(training_pars_dora.toml)
+	@$(UV_EXE) run python -m accelerate.commands.launch train_network.py --config_file=training_pars_dora.toml
 	@echo "Training completed"
 
 clean:
