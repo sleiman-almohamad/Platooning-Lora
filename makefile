@@ -35,7 +35,7 @@ BASE_MODEL := $(firstword $(wildcard *.safetensors))
 BASE_MODEL_URL := https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors
 DATASET_DIR := dataset
 OUTPUT_DIR := Output_Lora_training
-CONFIG_FILE := training_pars.toml
+CONFIG_FILE := training_pars_lora.toml
 
 .PHONY: init train clean show-os
 

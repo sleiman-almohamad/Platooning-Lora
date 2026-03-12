@@ -1,0 +1,70 @@
+[general]
+max_data_loader_n_workers = 1
+persistent_data_loader_workers = true
+no_half_vae = true
+full_bf16 = true
+mixed_precision = "bf16"
+gradient_checkpointing = true
+gradient_accumulation_steps = 1
+seed = 0
+max_token_length = 225
+prior_loss_weight = 1.0
+xformers = false
+max_train_epochs = 25
+cache_latents = true
+clip_skip = 2
+pretrained_model_name_or_path = "v1-5-pruned.safetensors"
+train_data_dir = "./dataset"
+
+[dataset]
+resolution = "512,512"
+train_batch_size = 1
+vae_batch_size = 1
+enable_bucket = true
+bucket_no_upscale = true
+min_bucket_reso = 256
+max_bucket_reso = 2048
+bucket_reso_steps = 64
+caption_extension = ".txt"
+
+[network]
+network_module = "lycoris.kohya"
+network_args = ["algo=locon", "dora_wd=true", "wd_on_output=true"]
+network_dim = 32
+network_alpha = 16.0
+min_timestep = 0
+max_timestep = 1000
+
+[optimizer]
+optimizer_type = "AdaFactor"
+lr_scheduler = "constant"
+learning_rate = 5e-5
+unet_lr = 5e-5
+text_encoder_lr = 1e-4
+max_grad_norm = 1.0
+min_snr_gamma = 5
+loss_type = "l2"
+
+[noise]
+noise_offset = 0.1
+multires_noise_iterations = 6
+multires_noise_discount = 0.3
+
+[sample]
+sample_sampler = "ddim"
+sample_every_n_epochs = 1
+sample_prompts = "./Platooning_Datasample_prompts.txt"
+
+[logging]
+log_tracker_name = "Platooning_LoRA_Run1"
+log_with = "tensorboard"
+logging_dir = "./Output_Lora_training/Logs"
+
+[save]
+output_dir = "./Output_Lora_training"
+output_name = "Lora_Platooning"
+save_precision = "bf16"
+save_model_as = "safetensors"
+save_every_n_epochs = 1
+save_state = true
+
