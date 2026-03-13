@@ -59,6 +59,7 @@ sample_prompts = "./Platooning_Datasample_prompts.txt"
 log_tracker_name = "Platooning_Dora_Run1"
 log_with = "tensorboard"
 logging_dir = "./Output_Dora_training/Logs"
+#tensorboard --logdir="grid_search_outputs"
 
 [save]
 output_dir = "./Output_Dora_training"

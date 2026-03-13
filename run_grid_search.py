@@ -9,7 +9,7 @@ DATASET_SIZES = [5, 10, 15, 25, 50]
 RANKS = [4, 8, 16, 32]
 MODELS = ["lora", "dora"]
 
-BASE_DIR = Path("/home/slimanutd/sleiman/Master-Thesis/Platooning-Lora_vs_Dora")
+BASE_DIR = Path(".")
 DATASET_BASE = BASE_DIR / "dataset" / "1_platooning"
 OUTPUT_BASE = BASE_DIR / "grid_search_outputs"
 TEMP_DATASET = BASE_DIR / "gs_temp_dataset"
@@ -37,6 +37,14 @@ def setup_temp_dataset(size):
 def run_training(model_type, rank, size):
     """Generates a config and runs the training for a specific combination."""
     run_id = f"{model_type}_r{rank}_data{size}"
+
+    run_output_dir = OUTPUT_BASE / run_id
+    expected_model_file = run_output_dir / f"{run_id}.safetensors"
+    
+    if expected_model_file.exists():
+        print(f"⏭️ Skipping {run_id}... Already completed!")
+        return
+
     print(f"\n>>> Starting Run: {run_id}")
     
     # Select base config
